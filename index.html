@@ -223,6 +223,7 @@
 
         @media print {
             .no-print, .top-actions, .tabs, .modal-overlay, .drag-overlay { display: none !important; }
+            .print-only { display: none; }
             body { padding: 0; background: white; font-size: 11pt; color: #000; margin: 0; } 
             
             @page { margin: 8mm; }
@@ -230,7 +231,9 @@
             
             #pdf-header-print { display: block; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
             .tab-content { display: block !important; opacity: 1 !important; }
+            .print-only { display: block !important; }
             .page-break { page-break-before: always; padding-top: 20px; }
+            .page-break section { page-break-inside: avoid; }
             table { font-size: 9pt; } 
 
             .print-footer {
@@ -415,50 +418,61 @@
                 </table>
             </div>
             
-            <div class="summary-card" id="resumoFinalContainer">
-                <h3 style="margin-bottom: 5px;">Resumo Final Discriminado</h3>
+                        <div class="summary-card">
+                <h3 style="margin-bottom: 5px;">Resumo Final</h3>
                 <div class="sum-row total-geral">
                     <span>TOTAL DA CONDENAÇÃO (Principal + Juros + SELIC)</span> 
                     <span id="resBrutoAtu">R$ 0,00</span>
                 </div>
-                
-                <div class="sum-row header-row">
-                    <span>1. Valor Devido à Parte Autora (<span id="resPercParte">80</span>%)</span> 
-                    <span id="resParteTotalAtu">R$ 0,00</span>
-                </div>
-                <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resPartePrin">R$ 0,00</span></div>
-                <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resParteJur">R$ 0,00</span></div>
-                <div class="sum-row sub"><span>└ SELIC</span> <span id="resParteSelic">R$ 0,00</span></div>
-
-                <div class="sum-row header-row">
-                    <span>2. Honorários Contratuais (Retenção - <span id="resPercContrato">20</span>%)</span> 
-                    <span id="resContratoTotalAtu">R$ 0,00</span>
-                </div>
-                <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resContratoPrin">R$ 0,00</span></div>
-                <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resContratoJur">R$ 0,00</span></div>
-                <div class="sum-row sub"><span>└ SELIC</span> <span id="resContratoSelic">R$ 0,00</span></div>
-
-                <div id="secSucumbencia">
-                    <div class="sum-row header-row" style="margin-top: 25px;">
-                        <span>3. Honorários de Sucumbência (<span id="resPercSucumb">0</span>% sobre a condenação)</span> 
-                        <span id="resSucumbTotalAtu">R$ 0,00</span>
-                    </div>
-                    <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resSucumbPrin">R$ 0,00</span></div>
-                    <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resSucumbJur">R$ 0,00</span></div>
-                    <div class="sum-row sub"><span>└ SELIC</span> <span id="resSucumbSelic">R$ 0,00</span></div>
-                </div>
-
-                <div id="statsBox" style="font-size: 0.85em; color: var(--text-muted); margin-top: 25px; padding-top:10px; border-top: 1px dashed #ccc;"></div>
+            </div>
             </div>
         </section>
+    
+
+    <!-- PÁGINA 3: RESUMO DISCRIMINADO E PARÂMETROS -->
+    <div class="page-break" style="margin-top: 30px;">
+        <div class="print-only" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 15px;">
+            <h2 style="margin: 0; border-bottom: none; padding-bottom: 0;">Resumo Final Discriminado</h2>
+        </div>
+        <div class="summary-card" id="resumoFinalContainer">
+            <h3 class="no-print" style="margin-bottom: 5px;">Resumo Final Discriminado</h3>
+            <div class="sum-row header-row">
+                <span>1. Valor Devido à Parte Autora (<span id="resPercParte">80</span>%)</span> 
+                <span id="resParteTotalAtu">R$ 0,00</span>
+            </div>
+            <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resPartePrin">R$ 0,00</span></div>
+            <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resParteJur">R$ 0,00</span></div>
+            <div class="sum-row sub"><span>└ SELIC</span> <span id="resParteSelic">R$ 0,00</span></div>
+
+            <div class="sum-row header-row">
+                <span>2. Honorários Contratuais (Retenção - <span id="resPercContrato">20</span>%)</span> 
+                <span id="resContratoTotalAtu">R$ 0,00</span>
+            </div>
+            <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resContratoPrin">R$ 0,00</span></div>
+            <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resContratoJur">R$ 0,00</span></div>
+            <div class="sum-row sub"><span>└ SELIC</span> <span id="resContratoSelic">R$ 0,00</span></div>
+
+            <div id="secSucumbencia">
+                <div class="sum-row header-row" style="margin-top: 25px;">
+                    <span>3. Honorários de Sucumbência (<span id="resPercSucumb">0</span>% sobre a condenação)</span> 
+                    <span id="resSucumbTotalAtu">R$ 0,00</span>
+                </div>
+                <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resSucumbPrin">R$ 0,00</span></div>
+                <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resSucumbJur">R$ 0,00</span></div>
+                <div class="sum-row sub"><span>└ SELIC</span> <span id="resSucumbSelic">R$ 0,00</span></div>
+            </div>
+
+            <div id="statsBox" style="font-size: 0.85em; color: var(--text-muted); margin-top: 25px; padding-top:10px; border-top: 1px dashed #ccc;"></div>
+        </div>
+
+        <section style="margin-top: 25px;">
+            <h2>Parâmetros Utilizados no Cálculo</h2>
+            <textarea id="txtParametros" rows="6"></textarea>
+        </section>
+    </div>
     </div>
 
-    <section style="margin-top: 25px;">
-        <h2>Parâmetros Utilizados no Cálculo</h2>
-        <textarea id="txtParametros" rows="6"></textarea>
-    </section>
-
-    <div class="disclaimer-footer no-print">
+        <div class="disclaimer-footer no-print">
         <strong>Aviso:</strong> As informações inseridas no sistema são de inteira responsabilidade do usuário, devendo este ser responsabilizado por informações falsas ou imprecisas. O sistema tem o intuito de facilitar os cálculos realizados pelos seus desenvolvedores.
     </div>
 
