@@ -171,7 +171,7 @@
         .note-box a { color: #d35400; font-weight: bold; text-decoration: none; }
         .note-box a:hover { text-decoration: underline; }
 
-        /* --- ESTILOS DO MODAL DE FUNDO (TIMBRE) --- */
+        /* --- ESTILOS DO MODAL DE TEMAS (SEM LOGO) --- */
         .bg-option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
         .bg-option-card {
             cursor: pointer; border: 2px solid var(--border); border-radius: 10px; overflow: hidden;
@@ -182,11 +182,11 @@
         .bg-option-card .bg-preview { width: 100%; height: 80px; background-size: cover; background-position: center; }
         .bg-option-card .bg-label { padding: 8px; font-weight: 600; font-size: 0.9em; color: var(--text-main); }
         .bg-current-info { margin-top: 15px; padding: 10px; background: var(--header-bg); border-radius: 6px; font-size: 0.85em; color: var(--text-muted); text-align: center; }
-        .print-bg { display: none; }
 
         @media print {
             .no-print, .top-actions, .tabs, .modal-overlay, .drag-overlay { display: none !important; }
-            body { padding: 0; background: white; font-size: 11pt; color: #000; } 
+            body { padding: 0; background: white; font-size: 11pt; color: #000; margin: 0; } 
+            @page { margin: 15mm; } /* Margens padrão de impressão */
             .container { box-shadow: none; border: none; width: 100%; padding: 0; margin-bottom: 30px; background: #fff;}
             #pdf-header-print { display: block; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
             .tab-content { display: block !important; opacity: 1 !important; }
@@ -198,27 +198,12 @@
                 font-size: 9pt; color: #7f8c8d; background-color: white; padding-top: 5px; border-top: 1px solid #eee;
             }
 
-            /* SANGRIA ATIVA PARA O TIMBRE/FUNDO */
-            body.sangria-ativa { margin: 0 !important; padding: 0 !important; }
-            @page { margin: 0; }
-            
-            body.sangria-ativa .container {
-                padding: 20mm 25mm !important; /* Margem de segurança para o texto não ficar em cima do timbre */
-                box-sizing: border-box;
-                min-height: 297mm;
-            }
-            
-            .print-bg { 
-                display: block !important; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-                z-index: -1; background-size: cover; background-repeat: no-repeat; background-position: center;
-                -webkit-print-color-adjust: exact; print-color-adjust: exact; 
-            }
-
             /* CORES DO TRAÇO DO TÍTULO POR TEMA NA IMPRESSÃO */
             .theme-sistema h1 { border-left-color: #174A67 !important; }
             .theme-classic h1 { border-left-color: #7f8c8d !important; }
-            .theme-salmon h1 { border-left-color: #BE5014 !important; } /* Laranja escuro */
+            .theme-salmon h1 { border-left-color: #BE5014 !important; }
 
+            /* ESTILOS DE TABELA POR TEMA */
             .theme-sistema th { background-color: #174A67 !important; color: #fff !important; -webkit-print-color-adjust: exact; border: 1px solid #10364c !important; } 
             .theme-sistema .header-row { background-color: #eaf2f8 !important; border-color: #174A67 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
             .theme-sistema tr:nth-child(odd) { background-color: #ffffff !important; -webkit-print-color-adjust: exact; } 
@@ -238,7 +223,6 @@
             .theme-salmon td { border: 1px solid #f0cdb4 !important; color: #000 !important;}
 
             .disabled-row { display: none; }
-            
             .sum-row { border-bottom-color: #ccc; }
             .total-geral { color: #000 !important; }
             .sum-row.sub { color: #444 !important; }
@@ -246,8 +230,6 @@
     </style>
 </head>
 <body id="pageBody">
-
-<div class="print-bg"></div>
 
 <div id="dragOverlay" class="drag-overlay no-print">
     <span>📂<br>Solte o arquivo de projeto (.json) aqui...</span>
@@ -260,7 +242,7 @@
         <a href="https://carlospatrickds.github.io/juntapdf/" target="_blank" class="btn btn-link">📂 Junta PDF</a>
         <div style="width: 15px;"></div>
         
-        <button class="btn btn-outline" style="padding:6px 12px; font-size:0.8em; border-color: #2980b9; color: var(--info)" onclick="abrirModalFundo()">🖼️ Add Timbre</button>
+        <button class="btn btn-outline" style="padding:6px 12px; font-size:0.8em; border-color: #2980b9; color: var(--info)" onclick="abrirModalTema()">🎨 Escolher Tema</button>
         
         <button class="btn btn-outline btn-danger-outline" style="padding:6px 12px; font-size:0.8em" onclick="novoCalculo()">🧹 Novo Cálculo</button>
         <button class="btn btn-outline" style="padding:6px 12px; font-size:0.8em" onclick="salvarProjeto()">💾 Salvar</button>
@@ -453,9 +435,7 @@
     </div>
 
     <section class="no-print" style="margin-top: 40px; display: flex; gap: 15px; justify-content: center;">
-        <button class="btn btn-secondary" onclick="imprimir('sistema')">📄 PDF Sistema</button>
-        <button class="btn btn-secondary" onclick="imprimir('classico')">📜 PDF</button>
-        <button class="btn btn-salmon" onclick="imprimir('salmao')">🟠 PDF Personalizado</button>
+        <button class="btn btn-primary" onclick="imprimir()" style="font-size: 1.1em; padding: 12px 30px;">🖨️ Imprimir PDF</button>
     </section>
 
     <div class="print-footer">
@@ -464,43 +444,28 @@
     </div>
 </div>
 
-
-<div id="modalFundo" class="modal-overlay no-print" onclick="fecharModalForaFundo(event)">
+<div id="modalTema" class="modal-overlay no-print" onclick="fecharModalForaTema(event)">
     <div class="modal-content">
-        <button class="modal-close" onclick="fecharModalFundo()">&times;</button>
-        <h2 class="modal-title">Personalizar Fundo do Relatório (Timbre)</h2>
-        <p style="font-size: 0.9em; color: var(--text-muted);">Escolha se deseja colocar uma imagem em toda a extensão da folha A4 no momento de gerar o PDF.</p>
+        <button class="modal-close" onclick="fecharModalTema()">&times;</button>
+        <h2 class="modal-title">Personalizar Cores do Relatório</h2>
+        <p style="font-size: 0.9em; color: var(--text-muted);">Escolha o tema visual que será aplicado na tabela durante a geração do PDF.</p>
         
         <div class="bg-option-grid">
-            <div class="bg-option-card" id="card_nenhum" onclick="selecionarOpcaoFundo('nenhum')">
-                <div class="bg-preview" style="background: #ecf0f1; display:flex; align-items:center; justify-content:center; font-size:1.5em;">📄</div>
-                <div class="bg-label">Sem Imagem</div>
+            <div class="bg-option-card" id="card_sistema" onclick="selecionarTema('sistema')">
+                <div class="bg-preview" style="background: #174A67;"></div>
+                <div class="bg-label">Azul Sistema</div>
             </div>
-            <div class="bg-option-card" id="card_repo" onclick="selecionarOpcaoFundo('repo')">
-                <div class="bg-preview" style="background: #dff9fb; display:flex; align-items:center; justify-content:center; font-size:1.5em;">📂</div>
-                <div class="bg-label">Do Repositório Local</div>
+            <div class="bg-option-card" id="card_classico" onclick="selecionarTema('classico')">
+                <div class="bg-preview" style="background: #7f8c8d;"></div>
+                <div class="bg-label">Clássico P&B</div>
             </div>
-            <div class="bg-option-card" id="card_upload" onclick="selecionarOpcaoFundo('upload')">
-                <div class="bg-preview" style="background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size:1.5em;">📤</div>
-                <div class="bg-label">Upload Direto</div>
+            <div class="bg-option-card" id="card_salmao" onclick="selecionarTema('salmao')">
+                <div class="bg-preview" style="background: #FFC599;"></div>
+                <div class="bg-label">Tema Salmão</div>
             </div>
         </div>
 
-        <div id="repoContainer" style="display: none; margin-top: 15px; padding: 15px; border: 1px dashed var(--border); text-align: center; border-radius: 8px;">
-            <label style="font-weight: bold; color: var(--info); font-size: 0.9em;">
-                Nome do arquivo de imagem que está na pasta do GitHub (ex: timbre.png):<br>
-                <input type="text" id="repoImageName" value="fundo.png" oninput="salvarImagemRepo()" style="margin-top:10px; width:60%; text-align:center;">
-            </label>
-        </div>
-
-        <div id="uploadContainer" style="display: none; margin-top: 15px; padding: 15px; border: 1px dashed var(--border); text-align: center; border-radius: 8px;">
-            <label style="cursor: pointer; font-weight: bold; color: var(--info);">
-                📂 Clique aqui para selecionar Imagem (PNG/JPG)
-                <input type="file" id="bgFileInput" accept="image/*" style="display:none;" onchange="processarUploadFundo(this)">
-            </label>
-        </div>
-
-        <div class="bg-current-info" id="bgCurrentInfo">Fundo ativo: Sem Imagem</div>
+        <div class="bg-current-info" id="bgCurrentInfoTema">Tema ativo: Azul Sistema</div>
     </div>
 </div>
 
@@ -544,7 +509,6 @@
     let dados = [];
     let indicesMap = {};
     let editMode = false, filterAll = false;
-    let imagemFundoGlobal = null;
 
     const fmtNum = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmtIdx = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
@@ -602,96 +566,42 @@
         btn.classList.add('active');
     }
 
-    /* === FUNÇÕES DO NOVO MODAL DE FUNDO === */
-    function abrirModalFundo() {
-        document.getElementById('modalFundo').classList.add('active');
-        atualizarInterfaceModalFundo();
+    /* === FUNÇÕES DO MODAL DE TEMA (APENAS CORES) === */
+    function abrirModalTema() {
+        document.getElementById('modalTema').classList.add('active');
+        atualizarInterfaceTema();
     }
-    function fecharModalFundo() { document.getElementById('modalFundo').classList.remove('active'); }
-    function fecharModalForaFundo(event) { if(event.target.id === 'modalFundo') fecharModalFundo(); }
-
-    function processarUploadFundo(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                imagemFundoGlobal = e.target.result;
-                try {
-                    localStorage.setItem('fundo_ativo_imagem', imagemFundoGlobal);
-                    localStorage.setItem('fundo_ativo_tipo', 'upload');
-                    atualizarInterfaceModalFundo();
-                    aplicarEstiloFundoReal();
-                } catch (error) {
-                    alert("A imagem selecionada é muito grande para o cache do navegador! Tente um arquivo menor ou use a opção do repositório.");
-                }
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
+    
+    function fecharModalTema() { 
+        document.getElementById('modalTema').classList.remove('active'); 
+    }
+    
+    function fecharModalForaTema(event) { 
+        if(event.target.id === 'modalTema') fecharModalTema(); 
     }
 
-    function selecionarOpcaoFundo(tipo) {
-        localStorage.setItem('fundo_ativo_tipo', tipo);
+    function selecionarTema(tipo) {
+        localStorage.setItem('tema_ativo_tipo', tipo);
+        atualizarInterfaceTema();
+        aplicarTemaBody();
+    }
+
+    function atualizarInterfaceTema() {
+        const tipoAtivo = localStorage.getItem('tema_ativo_tipo') || 'sistema';
         
-        document.getElementById('uploadContainer').style.display = tipo === 'upload' ? 'block' : 'none';
-        document.getElementById('repoContainer').style.display = tipo === 'repo' ? 'block' : 'none';
-        
-        if (tipo === 'upload' && !imagemFundoGlobal) {
-            document.getElementById('bgFileInput').click();
-        } else if (tipo === 'repo') {
-            salvarImagemRepo();
-        }
-        
-        atualizarInterfaceModalFundo();
-        aplicarEstiloFundoReal();
-    }
-
-    function salvarImagemRepo() {
-        const val = document.getElementById('repoImageName').value || 'fundo.png';
-        localStorage.setItem('fundo_ativo_repo', val);
-        aplicarEstiloFundoReal();
-    }
-
-    function atualizarInterfaceModalFundo() {
-        const tipoAtivo = localStorage.getItem('fundo_ativo_tipo') || 'nenhum';
-        imagemFundoGlobal = localStorage.getItem('fundo_ativo_imagem');
-        const repoImg = localStorage.getItem('fundo_ativo_repo') || 'fundo.png';
-
-        document.getElementById('repoImageName').value = repoImg;
-
-        document.querySelectorAll('#modalFundo .bg-option-card').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('#modalTema .bg-option-card').forEach(c => c.classList.remove('active'));
         const cardAtivo = document.getElementById(`card_${tipoAtivo}`);
         if(cardAtivo) cardAtivo.classList.add('active');
 
-        if(imagemFundoGlobal) {
-            document.querySelector('#card_upload .bg-preview').style.backgroundImage = `url('${imagemFundoGlobal}')`;
-            document.querySelector('#card_upload .bg-preview').innerHTML = '';
-        }
-        
-        document.querySelector('#card_repo .bg-preview').style.backgroundImage = `url('${repoImg}')`;
-        document.querySelector('#card_repo .bg-preview').innerHTML = '';
-
-        const labels = { 'nenhum': 'Sem Imagem', 'repo': 'Imagem do GitHub', 'upload': 'Upload Local' };
-        document.getElementById('bgCurrentInfo').innerText = `Fundo ativo: ${labels[tipoAtivo] || 'Padrão'}`;
+        const labels = { 'sistema': 'Azul Sistema', 'classico': 'Clássico P&B', 'salmao': 'Salmão' };
+        document.getElementById('bgCurrentInfoTema').innerText = `Tema ativo: ${labels[tipoAtivo] || 'Azul Sistema'}`;
     }
 
-    function aplicarEstiloFundoReal() {
-        const tipo = localStorage.getItem('fundo_ativo_tipo') || 'nenhum';
-        const bgPrintElement = document.querySelector('.print-bg');
-        const body = document.getElementById('pageBody');
-        
-        if (!bgPrintElement) return;
-
-        if (tipo === 'upload' && localStorage.getItem('fundo_ativo_imagem')) {
-            bgPrintElement.style.backgroundImage = `url('${localStorage.getItem('fundo_ativo_imagem')}')`;
-            body.classList.add('sangria-ativa');
-        } else if (tipo === 'repo' && localStorage.getItem('fundo_ativo_repo')) {
-            bgPrintElement.style.backgroundImage = `url('${localStorage.getItem('fundo_ativo_repo')}')`;
-            body.classList.add('sangria-ativa');
-        } else {
-            bgPrintElement.style.backgroundImage = "none";
-            body.classList.remove('sangria-ativa');
-        }
+    function aplicarTemaBody() {
+        const t = localStorage.getItem('tema_ativo_tipo') || 'sistema';
+        document.getElementById('pageBody').className = (t === 'classico' ? 'theme-classic' : (t === 'salmao' ? 'theme-salmon' : 'theme-sistema'));
     }
-    /* ======================================= */
+    /* ============================================== */
 
     function abrirModalExplicacao() { document.getElementById('modalExplicacao').classList.add('active'); }
     function fecharModalExplicacao() { document.getElementById('modalExplicacao').classList.remove('active'); }
@@ -1101,7 +1011,8 @@
         }
     });
 
-    function imprimir(t) {
+    // ATUALIZADO: Agora puxa o tema guardado e só existe um botão de impressão
+    function imprimir() {
         const h = document.getElementById('print-content');
         let html = '';
         const c = [
@@ -1120,18 +1031,14 @@
         });
         h.innerHTML = html;
         
-        document.getElementById('pageBody').className = (t === 'classico' ? 'theme-classic' : (t === 'salmao' ? 'theme-salmon' : 'theme-sistema'));
-        
-        // Garante que o fundo esteja devidamente renderizado de acordo com o que foi escolhido no modal
-        aplicarEstiloFundoReal(); 
-        
+        aplicarTemaBody(); // Garante que a classe certa de impressão está aplicada
         window.print();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
         setInitialDate();
         geraParams();
-        aplicarEstiloFundoReal(); // Aplica a configuração salva do utilizador logo que a página carrega
+        aplicarTemaBody(); // Aplica o tema salvo logo na abertura da página
 
         const indicesSalvos = localStorage.getItem('backupIndices');
         if (indicesSalvos) {
