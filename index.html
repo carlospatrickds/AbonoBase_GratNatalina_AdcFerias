@@ -92,10 +92,12 @@
         }
 
         /* FUNDO DE IMPRESSÃO / TELA (SANGRIA) */
+        .print-only { display: none !important; }
+
         .print-bg {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-size: cover; background-repeat: no-repeat; background-position: center;
-            z-index: 0; -webkit-print-color-adjust: exact; color-adjust: exact;
+            z-index: 0; pointer-events: none; -webkit-print-color-adjust: exact; color-adjust: exact;
         }
 
         .container {
@@ -223,7 +225,6 @@
 
         @media print {
             .no-print, .top-actions, .tabs, .modal-overlay, .drag-overlay { display: none !important; }
-            .print-only { display: none; }
             body { padding: 0; background: white; font-size: 11pt; color: #000; margin: 0; } 
             
             @page { margin: 8mm; }
@@ -237,8 +238,9 @@
             table { font-size: 9pt; } 
 
             .print-footer {
-                display: block !important; position: fixed; bottom: 0; left: 0; width: 100%; text-align: center;
+                display: block !important; position: fixed; bottom: 5mm; left: 0; width: 100%; text-align: center;
                 font-size: 9pt; background-color: transparent; padding-top: 5px; border-top: 1px solid #ccc;
+                z-index: 9999;
             }
 
             .print-bg { background-size: 100% 100% !important; }
@@ -260,6 +262,7 @@
             .sum-row { border-bottom-color: #ccc; }
             .total-geral { color: #000 !important; }
             .sum-row.sub { color: #444 !important; }
+            hr.divider { -webkit-print-color-adjust: exact; color-adjust: exact; border-top: 3px solid #174A67 !important; }
         }
     </style>
 </head>
@@ -418,9 +421,8 @@
                 </table>
             </div>
             
-                        <div class="summary-card">
-                <h3 style="margin-bottom: 5px;">Resumo Final</h3>
-                <div class="sum-row total-geral">
+                        <div class="summary-card" style="padding: 15px 25px;">
+                <div class="sum-row total-geral" style="padding: 0; border: none;">
                     <span>TOTAL DA CONDENAÇÃO (Principal + Juros + SELIC)</span> 
                     <span id="resBrutoAtu">R$ 0,00</span>
                 </div>
@@ -431,11 +433,11 @@
 
     <!-- PÁGINA 3: RESUMO DISCRIMINADO E PARÂMETROS -->
     <div class="page-break" style="margin-top: 30px;">
-        <div class="print-only" style="display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 0;">
             <h2 style="margin: 0; border-bottom: none; padding-bottom: 0;">Resumo Final Discriminado</h2>
         </div>
+        <hr style="border: none; border-bottom: 1px solid var(--border); margin: 10px 0 25px 0;">
         <div class="summary-card" id="resumoFinalContainer">
-            <h3 class="no-print" style="margin-bottom: 5px;">Resumo Final Discriminado</h3>
             <div class="sum-row header-row">
                 <span>1. Valor Devido à Parte Autora (<span id="resPercParte">80</span>%)</span> 
                 <span id="resParteTotalAtu">R$ 0,00</span>
@@ -987,34 +989,40 @@
         const body = document.getElementById('tableCorrecaoBody');
         body.innerHTML = '';
         let showPago = document.getElementById('chkPagamento').checked;
-        document.querySelectorAll('.col-pago').forEach(el => el.style.display = showPago ? 'table-cell' : 'none');
-        
+
         dados.forEach((r, i) => {
             let totalHist = (r.gratP > 0 ? r.abono : 0) + (r.ferP > 0 ? r.abono/3 : 0);
             if (!r.hab || (!filterAll && totalHist === 0)) return;
-            
+
             let idx = indicesMap[r.c] || { cor: 1.0, jur: 0, sel: 0 };
-            let base = totalHist - (r.pagoVal || 0);
+            let pagoVal = parseFloat(r.pagoVal) || 0;
+            let base = totalHist - pagoVal;
             if(base < 0) base = 0;
 
             let principalCorrigido = base * idx.cor;
             let valJurosMora = principalCorrigido * (idx.jur / 100);
             let baseSelic = (idx.jur > 0) ? (principalCorrigido + valJurosMora) : principalCorrigido;
             let valSelic = baseSelic * (idx.sel / 100);
-            
+
             r.principalCorrigido = principalCorrigido;
             r.valJurosMora = valJurosMora;
             r.valSelic = valSelic;
             r.totalAtualizado = principalCorrigido + valJurosMora + valSelic;
 
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td style="text-align:center">${r.c}</td><td>${fmtNum(totalHist)}</td><td class="col-pago"><span class="editable-active" contenteditable="true" onblur="dados[${i}].pagoVal=parseV(this.innerText);renderCorrecao()">${fmtNum(r.pagoVal)}</span></td><td>${fmtNum(base)}</td><td>${fmtIdx(idx.cor)}</td><td>${fmtNum(principalCorrigido)}</td><td>${fmtNum(idx.jur)}%</td><td>${fmtNum(idx.sel)}%</td><td style="font-weight:bold">${fmtNum(r.totalAtualizado)}</td>`;
+            let pagoDisplay = showPago ? 'table-cell' : 'none';
+            tr.innerHTML = `<td style="text-align:center">${r.c}</td><td>${fmtNum(totalHist)}</td><td class="col-pago" style="display:${pagoDisplay}"><span class="editable-active" contenteditable="true" onblur="dados[${i}].pagoVal=parseV(this.innerText);renderCorrecao()">${fmtNum(pagoVal)}</span></td><td>${fmtNum(base)}</td><td>${fmtIdx(idx.cor)}</td><td>${fmtNum(principalCorrigido)}</td><td>${fmtNum(idx.jur)}%</td><td>${fmtNum(idx.sel)}%</td><td style="font-weight:bold">${fmtNum(r.totalAtualizado)}</td>`;
             body.appendChild(tr);
         });
+
+        // Aplicar display nos cabeçalhos (th) da coluna valor pago
+        document.querySelectorAll('#tblCorrecao thead .col-pago').forEach(el => {
+            el.style.display = showPago ? 'table-cell' : 'none';
+        });
+
         calcularTotaisTodasAbas();
     }
-
-    function calcularTotaisTodasAbas() {
+function calcularTotaisTodasAbas() {
         let h = 0, ea = 0, ex = 0;
         let totBrutoAtu = 0, totPrincipalAtu = 0, totJurosMoraAtu = 0, totSelicAtu = 0;
 
