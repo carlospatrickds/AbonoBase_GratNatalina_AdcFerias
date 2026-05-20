@@ -21,7 +21,7 @@
             --header-bg: #e2e8f0;
             --row-hover: rgba(0,0,0,0.02);
             --th-bg: #2c3e50;
-            --divider-color: #174A67; /* Azul Petróleo */
+            --divider-color: #174A67; 
         }
 
         /* --- TEMAS (APLICAM-SE NA TELA EM TEMPO REAL) --- */
@@ -99,6 +99,14 @@
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             position: relative;
+            z-index: 1;
+        }
+
+        /* FUNDO DE IMPRESSÃO (SANGRIA) */
+        .print-bg {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-size: 100% 100%; background-repeat: no-repeat; background-position: center;
+            z-index: 0; -webkit-print-color-adjust: exact; color-adjust: exact;
         }
 
         .top-actions { position: absolute; top: 20px; right: 40px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;}
@@ -174,7 +182,7 @@
         }
         .drag-overlay.active { display: flex; }
 
-        /* ESTILOS DOS MODAIS (POPUP) */
+        /* ESTILOS DOS MODAIS */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; 
@@ -190,16 +198,12 @@
         .modal-close { position: absolute; top: 20px; right: 25px; background: transparent; border: none; font-size: 1.8em; cursor: pointer; color: var(--text-muted); }
         .modal-close:hover { color: var(--danger); }
         .modal-title { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;}
+        
         .modal-body h4 { color: var(--info); margin-bottom: 8px; margin-top: 25px; font-size: 1.1em;}
         .modal-body p { line-height: 1.6; color: var(--text-main); font-size: 0.95em; text-align: justify; margin-bottom: 10px;}
         .modal-body ul { padding-left: 20px; margin-top: 5px; }
         .modal-body li { margin-bottom: 8px; font-size: 0.95em; color: var(--text-main); line-height: 1.5; text-align: justify;}
         
-        .note-box { background-color: #fdf2e9; border-left: 4px solid #e67e22; padding: 15px; margin-top: 25px; border-radius: 4px; }
-        .note-box p { margin: 0; font-size: 0.9em; }
-        .note-box a { color: #d35400; font-weight: bold; text-decoration: none; }
-        .note-box a:hover { text-decoration: underline; }
-
         /* --- ESTILOS DO MODAL DE TEMAS --- */
         .bg-option-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
         .bg-option-card {
@@ -210,13 +214,19 @@
         .bg-option-card.active { border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.3); }
         .bg-option-card .bg-preview { width: 100%; height: 80px; background-size: cover; background-position: center; }
         .bg-option-card .bg-label { padding: 8px; font-weight: 600; font-size: 0.9em; color: var(--text-main); }
-        .bg-current-info { margin-top: 15px; padding: 10px; background: var(--header-bg); border-radius: 6px; font-size: 0.85em; color: var(--text-muted); text-align: center; }
+        
+        .bg-upload-area { margin-top: 30px; border-top: 1px dashed var(--border); padding-top: 20px; }
+        .bg-upload-controls { display: flex; gap: 15px; align-items: center; margin-top: 15px; }
+        .bg-preview-box { width: 55px; height: 75px; border: 1px solid var(--border); border-radius: 4px; background-size: cover; background-position: center; background-color: #f2f2f2; }
 
         @media print {
             .no-print, .top-actions, .tabs, .modal-overlay, .drag-overlay { display: none !important; }
             body { padding: 0; background: white; font-size: 11pt; color: #000; margin: 0; } 
+            
+            /* Margens padrão se não tiver sangria */
             @page { margin: 15mm; }
-            .container { box-shadow: none; border: none; width: 100%; padding: 0; margin-bottom: 30px; background: #fff;}
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; margin-bottom: 30px; background: transparent;}
+            
             #pdf-header-print { display: block; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
             .tab-content { display: block !important; opacity: 1 !important; }
             .page-break { page-break-before: always; padding-top: 20px; }
@@ -224,10 +234,10 @@
 
             .print-footer {
                 display: block !important; position: fixed; bottom: 0; left: 0; width: 100%; text-align: center;
-                font-size: 9pt; color: #7f8c8d; background-color: white; padding-top: 5px; border-top: 1px solid #eee;
+                font-size: 9pt; color: #7f8c8d; background-color: transparent; padding-top: 5px; border-top: 1px solid #ccc;
             }
 
-            /* REGRAS ESPECÍFICAS DE IMPRESSÃO POR TEMA (Zebra e Cores Exatas) */
+            /* REGRAS ESPECÍFICAS DE IMPRESSÃO POR TEMA */
             .theme-sistema th, .theme-sistema .header-row { -webkit-print-color-adjust: exact; }
             .theme-sistema tr:nth-child(odd) { background-color: #ffffff !important; -webkit-print-color-adjust: exact; } 
             .theme-sistema tr:nth-child(even) { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
@@ -248,6 +258,8 @@
     </style>
 </head>
 <body id="pageBody">
+
+<div id="printBg" class="print-bg"></div>
 
 <div id="dragOverlay" class="drag-overlay no-print">
     <span>📂<br>Solte o arquivo de projeto (.json) aqui...</span>
@@ -465,8 +477,8 @@
 <div id="modalTema" class="modal-overlay no-print" onclick="fecharModalForaTema(event)">
     <div class="modal-content">
         <button class="modal-close" onclick="fecharModalTema()">&times;</button>
-        <h2 class="modal-title">Personalizar Cores do Relatório</h2>
-        <p style="font-size: 0.9em; color: var(--text-muted);">Escolha o tema visual que será aplicado na tabela.</p>
+        <h2 class="modal-title">Personalizar Visual do Relatório</h2>
+        <p style="font-size: 0.9em; color: var(--text-muted);">Escolha a cor da tabela para o PDF final.</p>
         
         <div class="bg-option-grid">
             <div class="bg-option-card" id="card_sistema" onclick="selecionarTema('sistema')">
@@ -483,7 +495,19 @@
             </div>
         </div>
 
-        <div class="bg-current-info" id="bgCurrentInfoTema">Tema ativo: Azul Sistema</div>
+        <div class="bg-upload-area">
+            <h4 style="margin-top:0; margin-bottom: 5px; color: var(--primary);">Papel Timbrado (Sangria PDF)</h4>
+            <p style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 10px;">Anexe uma imagem no tamanho A4 para cobrir totalmente o fundo do PDF (sem margens brancas).</p>
+            
+            <div class="bg-upload-controls">
+                <div id="bgPreviewImg" class="bg-preview-box"></div>
+                <div>
+                    <button class="btn btn-outline" style="font-size: 0.85em; padding: 6px 15px;" onclick="document.getElementById('inputFundoPdf').click()">📁 Enviar Imagem A4</button>
+                    <button class="btn btn-danger-outline" style="font-size: 0.85em; padding: 6px 15px; margin-left: 8px;" onclick="removerFundo()">🗑️ Remover Fundo</button>
+                    <input type="file" id="inputFundoPdf" style="display:none" accept="image/png, image/jpeg, image/jpg" onchange="processarUploadFundo(this)">
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -527,6 +551,9 @@
     let dados = [];
     let indicesMap = {};
     let editMode = false, filterAll = false;
+    
+    // Variável para armazenar a imagem de sangria
+    let imagemFundoGlobal = null; 
 
     const fmtNum = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmtIdx = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
@@ -584,19 +611,14 @@
         btn.classList.add('active');
     }
 
-    /* === FUNÇÕES DO MODAL DE TEMA (APENAS CORES) === */
+    /* === FUNÇÕES DO MODAL DE TEMA & SANGRIA === */
     function abrirModalTema() {
         document.getElementById('modalTema').classList.add('active');
         atualizarInterfaceTema();
     }
     
-    function fecharModalTema() { 
-        document.getElementById('modalTema').classList.remove('active'); 
-    }
-    
-    function fecharModalForaTema(event) { 
-        if(event.target.id === 'modalTema') fecharModalTema(); 
-    }
+    function fecharModalTema() { document.getElementById('modalTema').classList.remove('active'); }
+    function fecharModalForaTema(event) { if(event.target.id === 'modalTema') fecharModalTema(); }
 
     function selecionarTema(tipo) {
         localStorage.setItem('tema_ativo_tipo', tipo);
@@ -606,18 +628,48 @@
 
     function atualizarInterfaceTema() {
         const tipoAtivo = localStorage.getItem('tema_ativo_tipo') || 'sistema';
-        
         document.querySelectorAll('#modalTema .bg-option-card').forEach(c => c.classList.remove('active'));
         const cardAtivo = document.getElementById(`card_${tipoAtivo}`);
         if(cardAtivo) cardAtivo.classList.add('active');
-
-        const labels = { 'sistema': 'Azul Sistema', 'classico': 'Clássico P&B', 'salmao': 'Salmão' };
-        document.getElementById('bgCurrentInfoTema').innerText = `Tema ativo: ${labels[tipoAtivo] || 'Azul Sistema'}`;
     }
 
     function aplicarTemaBody() {
         const t = localStorage.getItem('tema_ativo_tipo') || 'sistema';
         document.getElementById('pageBody').className = (t === 'classico' ? 'theme-classic' : (t === 'salmao' ? 'theme-salmon' : 'theme-sistema'));
+    }
+    
+    // Funções de Gerenciamento da Imagem de Sangria
+    function carregarFundoSalvo() {
+        const bgSalvo = localStorage.getItem('backup_fundo_pdf_sangria');
+        if (bgSalvo) {
+            imagemFundoGlobal = bgSalvo;
+            document.getElementById('bgPreviewImg').style.backgroundImage = `url('${bgSalvo}')`;
+        }
+    }
+
+    function processarUploadFundo(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target.result;
+            imagemFundoGlobal = result;
+            document.getElementById('bgPreviewImg').style.backgroundImage = `url('${result}')`;
+            
+            try {
+                localStorage.setItem('backup_fundo_pdf_sangria', result);
+            } catch(err) {
+                console.warn("Imagem muito pesada para salvar no cache do navegador.");
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removerFundo() {
+        imagemFundoGlobal = null;
+        document.getElementById('bgPreviewImg').style.backgroundImage = 'none';
+        localStorage.removeItem('backup_fundo_pdf_sangria');
+        document.getElementById('inputFundoPdf').value = '';
     }
     /* ============================================== */
 
@@ -1029,7 +1081,7 @@
         }
     });
 
-    // ATUALIZADO: Agora puxa o tema guardado e só existe um botão de impressão
+    // ATUALIZADO: Lógica de injeção de estilo especial para a "Sangria" funcionar no PDF
     function imprimir() {
         const h = document.getElementById('print-content');
         let html = '';
@@ -1049,7 +1101,34 @@
         });
         h.innerHTML = html;
         
-        aplicarTemaBody(); // Garante que a classe certa de impressão está aplicada
+        aplicarTemaBody(); // Garante o tema selecionado
+        
+        // CONTROLE DA SANGRIA (FUNDO TOTAL DO PDF)
+        const printBg = document.getElementById('printBg');
+        let styleSangria = document.getElementById('styleSangriaOverride');
+
+        if (imagemFundoGlobal) {
+            printBg.style.display = 'block';
+            printBg.style.backgroundImage = `url('${imagemFundoGlobal}')`;
+            
+            // Injeta CSS temporário para zerar a margem da página no PDF e não cortar a imagem
+            if (!styleSangria) {
+                styleSangria = document.createElement('style');
+                styleSangria.id = 'styleSangriaOverride';
+                styleSangria.innerHTML = `
+                    @media print { 
+                        @page { margin: 0 !important; } 
+                        body { padding: 0 !important; } 
+                        .container { padding: 3cm 2cm 2cm 2cm !important; } 
+                    }
+                `;
+                document.head.appendChild(styleSangria);
+            }
+        } else {
+            printBg.style.display = 'none';
+            if (styleSangria) styleSangria.remove();
+        }
+
         window.print();
     }
 
@@ -1057,6 +1136,7 @@
         setInitialDate();
         geraParams();
         aplicarTemaBody(); // Aplica o tema salvo logo na abertura da página
+        carregarFundoSalvo(); // Carrega a imagem da sangria se houver no cache
 
         const indicesSalvos = localStorage.getItem('backupIndices');
         if (indicesSalvos) {
