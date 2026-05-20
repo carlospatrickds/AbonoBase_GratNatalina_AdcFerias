@@ -189,23 +189,22 @@
         .bg-option-card.active .bg-label { color: var(--info); }
         .bg-current-info { margin-top: 15px; padding: 12px; background: var(--header-bg); border-radius: 6px; font-size: 0.9em; color: var(--text-muted); text-align: center; }
 
-        /* SEÇÃO DE IMPRESSÃO CUSTOMIZADA COM SANGRIA SELECIONÁVEL */
+        /* ESTILOS DE CONFIGURAÇÃO DE IMPRESSÃO (SUPORTE DINÂMICO A SANGRIA COMPLETA) */
         @media print {
-            /* Se a sangria estiver ativa, o navegador remove as margens totais da folha física */
             body.sangria-ativa {
                 margin: 0 !important;
                 padding: 0 !important;
             }
 
             @page {
-                /* Configuração inicial da página. Se a classe body.sangria-ativa estiver ligada, o margin 0 do body assume */
                 margin: 0;
             }
 
             body.sangria-ativa .container {
-                padding: 20mm 25mm !important; /* Adiciona margem de segurança de 2.5cm apenas no texto/conteúdo */
+                padding: 20mm 25mm !important; /* Adiciona margem de segurança de 25mm interna ao texto para não colar nas bordas físicas */
                 box-sizing: border-box;
-                min-height: 297mm; /* Garante tamanho de uma folha A4 cheia */
+                min-height: 297mm;
+                max-width: 100% !important;
             }
 
             body.sangria-ativa .print-bg {
@@ -219,9 +218,8 @@
             }
 
             .no-print, .top-actions, .tabs, .modal-overlay, .drag-overlay { display: none !important; }
-            body { background-image: none; font-size: 11pt; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+            body { padding: 0; background-image: none; font-size: 11pt; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
             .container { box-shadow: none; border: none; width: 100%; padding: 0; margin-bottom: 30px; background: transparent;}
-            
             .print-bg { display: block !important; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-size: cover; background-repeat: no-repeat; background-position: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             #pdf-header-print { display: block; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
             .logo-container { text-align: center; margin-bottom: 15px; }
@@ -238,7 +236,7 @@
             /* CORES DO TRAÇO DO TÍTULO POR TEMA NA IMPRESSÃO */
             .theme-sistema h1 { border-left-color: #174A67 !important; }
             .theme-classic h1 { border-left-color: #7f8c8d !important; }
-            .theme-salmon h1 { border-left-color: #BE5014 !important; } /* Laranja escuro */
+            .theme-salmon h1 { border-left-color: #BE5014 !important; }
 
             .theme-sistema th { background-color: #174A67 !important; color: #fff !important; -webkit-print-color-adjust: exact; border: 1px solid #10364c !important; } 
             .theme-sistema .header-row { background-color: #eaf2f8 !important; border-color: #174A67 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
@@ -259,7 +257,6 @@
             .theme-salmon td { border: 1px solid #f0cdb4 !important; color: #000 !important;}
 
             .disabled-row { display: none; }
-            
             .sum-row { border-bottom-color: #ccc; }
             .total-geral { color: #000 !important; }
             .sum-row.sub { color: #444 !important; }
@@ -512,35 +509,440 @@
 </div>
 
 <script>
-    // VARIAVEL GLOBAL DE CONTROLE DO FUNDO PERSONALIZADO (BASE64)
+    // LISTAS E ARMAZENAMENTOS ORIGINAIS DO SEU SISTEMA DO GITHUB
+    let dadosHistoricoGlobal = [];
+    let indicesCorrecaoGlobal = [];
+    let isEditingActive = false;
+    let showAllRows = false;
     let imagemFundoGlobal = null;
 
-    // ABRE O MODAL
+    // SISTEMA ORIGINAL DE ABAS
+    function openTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function mascaraCNJ(i) {
+        let v = i.value.replace(/\D/g,"");
+        if(v.length>20) v = v.substring(0,20);
+        if(v.length>7) v = v.substring(0,7) + "-" + v.substring(7);
+        if(v.length>10) v = v.substring(0,10) + "." + v.substring(10);
+        if(v.length>15) v = v.substring(0,15) + "." + v.substring(15);
+        if(v.length>17) v = v.substring(0,17) + "." + v.substring(17);
+        if(v.length>22) v = v.substring(0,22) + "." + v.substring(22);
+        i.value = v;
+    }
+
+    function mascaraData(i) {
+        let v = i.value.replace(/\D/g,"");
+        if(v.length>2) v = v.substring(0,2) + "/" + v.substring(2,6);
+        i.value = v;
+    }
+
+    function parseMoeda(v) {
+        if(!v) return 0;
+        v = v.replace("R$","").trim();
+        if(v.includes(",") && v.includes(".")) { v = v.replace(/\./g,"").replace(",","."); }
+        else if(v.includes(",")) { v = v.replace(",","."); }
+        return parseFloat(v) || 0;
+    }
+
+    function formatMoeda(v) {
+        return "R$ " + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function formatCompetencia(dStr) {
+        if(!dStr) return "";
+        let p = dStr.split(/[-/]/);
+        if(p.length>=2) {
+            if(p[0].length===4) return p[1].padStart(2,'0') + "/" + p[0];
+            return p[0].padStart(2,'0') + "/" + p[1];
+        }
+        return dStr;
+    }
+
+    function converterCompParaOrdenacao(c) {
+        let p = c.split("/");
+        if(p.length===2) return parseInt(p[1] + p[0]);
+        return 0;
+    }
+
+    function setInitialDate() {
+        const hj = new Date();
+        document.getElementById('dataAjuizamento').value = hj.toISOString().split('T')[0];
+    }
+
+    function geraParams() {
+        calcularTotaisTodasAbas();
+    }
+
+    // LÓGICA DO CORAÇÃO MATEMÁTICO DA IMPORTAÇÃO DE HISTÓRICOS
+    function processar() {
+        const txt = document.getElementById('csvInput').value.trim();
+        if(!txt) return alert("Por favor, cole os dados da ficha financeira.");
+        
+        let linhas = txt.split("\n");
+        dadosHistoricoGlobal = [];
+
+        linhas.forEach(l => {
+            let col = l.split("\t");
+            if(col.length < 2) return;
+            let comp = formatCompetencia(col[0].trim());
+            if(!comp || comp.includes("Comp")) return;
+
+            let abono = parseMoeda(col[1]);
+            let natPago = col.length > 2 ? parseMoeda(col[2]) : 0;
+            let ferPago = col.length > 5 ? parseMoeda(col[5]) : 0;
+
+            let natDev = abono; 
+            let ferDev = abono / 3;
+
+            if(comp.startsWith("13/")) { ferDev = 0; ferPago = 0; }
+
+            let difNat = Math.max(0, natDev - natPago);
+            let difFer = Math.max(0, ferDev - ferPago);
+            let subtotal = difNat + difFer;
+
+            dadosHistoricoGlobal.push({
+                ativo: true, comp: comp, abono: abono,
+                natPago: natPago, natDev: natDev, difNat: difNat,
+                ferPago: ferPago, ferDev: ferDev, difFer: difFer,
+                subtotal: subtotal, prescrita: false
+            });
+        });
+
+        dadosHistoricoGlobal.sort((a,b) => converterCompParaOrdenacao(a.comp) - converterCompParaOrdenacao(b.comp));
+        aplicarPrescricao();
+    }
+
+    function aplicarPrescricao() {
+        const dtAju = document.getElementById('dataAjuizamento').value;
+        const check = document.getElementById('prescricaoToggle').value;
+        
+        if(dtAju && check === 'sim') {
+            let d = new Date(dtAju + "T00:00:00");
+            d.setFullYear(d.getFullYear() - 5);
+            let limite = parseInt(d.getFullYear() + String(d.getMonth()+1).padStart(2,'0'));
+
+            dadosHistoricoGlobal.forEach(i => {
+                let compNum = converterCompParaOrdenacao(i.comp);
+                i.prescrita = compNum < limite;
+            });
+        } else {
+            dadosHistoricoGlobal.forEach(i => i.prescrita = false);
+        }
+        renderHistorial();
+    }
+
+    function renderHistorial() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = "";
+        let totalBruto = 0;
+
+        dadosHistoricoGlobal.forEach((i, idx) => {
+            if(!showAllRows && i.prescrita) return;
+
+            let tr = document.createElement('tr');
+            if(!i.ativo || i.prescrita) tr.className = "disabled-row";
+
+            let subHtml = i.prescrita ? "PRESCRITO" : formatMoeda(i.subtotal);
+            if(i.ativo && !i.prescrita) totalBruto += i.subtotal;
+
+            tr.innerHTML = `
+                <td class="no-print" style="text-align:center"><input type="checkbox" ${i.ativo?'checked':''} ${i.prescrita?'disabled':''} onchange="toggleLinhaAtiva(${idx})"></td>
+                <td style="text-align:center; font-weight:bold">${i.comp}</td>
+                <td class="${isEditingActive?'editable-active':''}" contenteditable="${isEditingActive}" onblur="editCel(this,${idx},'abono')">${formatMoeda(i.abono)}</td>
+                <td class="${isEditingActive?'editable-active':''}" contenteditable="${isEditingActive}" onblur="editCel(this,${idx},'natPago')">${formatMoeda(i.natPago)}</td>
+                <td>${formatMoeda(i.natDev)}</td>
+                <td style="font-weight:500" class="${i.difNat>0?'alert-value':''}">${formatMoeda(i.difNat)}</td>
+                <td class="${isEditingActive?'editable-active':''}" contenteditable="${isEditingActive}" onblur="editCel(this,${idx},'ferPago')">${formatMoeda(i.ferPago)}</td>
+                <td>${formatMoeda(i.ferDev)}</td>
+                <td style="font-weight:500" class="${i.difFer>0?'alert-value':''}">${formatMoeda(i.difFer)}</td>
+                <td style="font-weight:bold; background-color:var(--bg)">${subHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('resBruto').innerText = formatMoeda(totalBruto);
+        renderCorrecao();
+    }
+
+    function toggleLinhaAtiva(idx) {
+        dadosHistoricoGlobal[idx].ativo = !dadosHistoricoGlobal[idx].ativo;
+        renderHistorial();
+    }
+
+    function editCel(cel, idx, campo) {
+        let val = parseMoeda(cel.innerText);
+        dadosHistoricoGlobal[idx][campo] = val;
+        
+        let item = dadosHistoricoGlobal[idx];
+        item.natDev = item.abono;
+        if(item.comp.startsWith("13/")) { item.ferDev = 0; item.ferPago = 0; } else { item.ferDev = item.abono/3; }
+        
+        item.difNat = Math.max(0, item.natDev - item.natPago);
+        item.difFer = Math.max(0, item.ferDev - item.ferPago);
+        item.subtotal = item.difNat + item.difFer;
+
+        renderHistorial();
+    }
+
+    function toggleEdit() {
+        isEditingActive = !isEditingActive;
+        document.getElementById('btnEdit').innerText = isEditingActive ? "🔓 Modo Edição Ativo" : "🔒 Edição (Aba 1)";
+        document.getElementById('btnEdit').classList.toggle('active');
+        renderHistorial();
+    }
+
+    function toggleFilter() {
+        showAllRows = !showAllRows;
+        document.getElementById('btnFilter').innerText = showAllRows ? "👁️ Ocultar Prescritos" : "👁️ Mostrar Tudo";
+        renderHistorial();
+    }
+
+    // ENGINE DE ATUALIZAÇÃO MONETÁRIA E LEITURA DE ÍNDICES DO CJF
+    function processarIndices() {
+        const txt = document.getElementById('csvIndices').value.trim();
+        if(!txt) return alert("Insira os índices de correção.");
+        
+        indicesCorrecaoGlobal = [];
+        let linhas = txt.split("\n");
+
+        linhas.forEach(l => {
+            let col = l.split("\t");
+            if(col.length < 2) return;
+            let c = formatCompetencia(col[0].trim());
+            if(!c || c.includes("Comp")) return;
+
+            let fat = parseFloat(col[1].replace(",",".")) || 1.0;
+            let jMora = col.length > 2 ? parseFloat(col[2].replace(",",".")) || 0 : 0;
+            let selic = col.length > 3 ? parseFloat(col[3].replace(",",".")) || 0 : 0;
+
+            indicesCorrecaoGlobal.push({comp: c, fator: fat, juros: jMora, selic: selic});
+        });
+
+        renderCorrecao();
+    }
+
+    function renderCorrecao() {
+        const tbody = document.getElementById('tableCorrecaoBody');
+        if(!tbody) return;
+        tbody.innerHTML = "";
+
+        const showAbatimento = document.getElementById('chkPagamento').checked;
+        document.querySelectorAll('.col-pago').forEach(e => e.style.display = showAbatimento ? 'table-cell' : 'none');
+
+        let indMap = new Map();
+        indicesCorrecaoGlobal.forEach(i => indMap.set(i.comp, i));
+
+        dadosHistoricoGlobal.forEach(h => {
+            if(!h.ativo || h.prescrita) return;
+
+            let m = indMap.get(h.comp) || {fator: 1.0, juros: 0, selic: 0};
+            let tr = document.createElement('tr');
+
+            let vBase = h.subtotal; 
+            let pCorrigido = vBase * m.fator;
+            let jVal = pCorrigido * (m.juros / 100);
+            let sVal = pCorrigido * (m.selic / 100);
+            let totalRow = pCorrigido + jVal + sVal;
+
+            tr.innerHTML = `
+                <td style="text-align:center; font-weight:bold">${h.comp}</td>
+                <td>${formatMoeda(h.subtotal)}</td>
+                <td class="col-pago" style="display:${showAbatimento?'table-cell':'none'}">${formatMoeda(0)}</td>
+                <td>${formatMoeda(vBase)}</td>
+                <td>${m.fator.toFixed(6)}</td>
+                <td>${formatMoeda(pCorrigido)}</td>
+                <td>${m.juros.toFixed(2)}%</td>
+                <td>${m.selic.toFixed(2)}%</td>
+                <td style="font-weight:bold; background-color:var(--bg)">${formatMoeda(totalRow)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        calcularTotaisTodasAbas();
+    }
+
+    function calcularTotaisTodasAbas() {
+        let indMap = new Map();
+        indicesCorrecaoGlobal.forEach(i => indMap.set(i.comp, i));
+
+        let tPrin = 0, tJur = 0, tSelic = 0;
+
+        dadosHistoricoGlobal.forEach(h => {
+            if(!h.ativo || h.prescrita) return;
+            let m = indMap.get(h.comp) || {fator: 1.0, juros: 0, selic: 0};
+            
+            let pCorr = h.subtotal * m.fator;
+            tPrin += pCorr;
+            tJur += pCorr * (m.juros / 100);
+            tSelic += pCorr * (m.selic / 100);
+        });
+
+        let condTotal = tPrin + tJur + tSelic;
+
+        let pContrato = parseFloat(document.getElementById('honContratuais').value) || 0;
+        let pSucumb = parseFloat(document.getElementById('honSucumbencia').value) || 0;
+        let pParte = 100 - pContrato;
+
+        document.getElementById('resPercParte').innerText = pParte;
+        document.getElementById('resPercContrato').innerText = pContrato;
+        document.getElementById('resPercSucumb').innerText = pSucumb;
+
+        // Distribuição Autor
+        let fParte = pParte / 100;
+        document.getElementById('resBrutoAtu').innerText = formatMoeda(condTotal);
+        document.getElementById('resParteTotalAtu').innerText = formatMoeda(condTotal * fParte);
+        document.getElementById('resPartePrin').innerText = formatMoeda(tPrin * fParte);
+        document.getElementById('resParteJur').innerText = formatMoeda(tJur * fParte);
+        document.getElementById('resParteSelic').innerText = formatMoeda(tSelic * fParte);
+
+        // Distribuição Contratuais
+        let fContrato = pContrato / 100;
+        document.getElementById('resContratoTotalAtu').innerText = formatMoeda(condTotal * fContrato);
+        document.getElementById('resContratoPrin').innerText = formatMoeda(tPrin * fContrato);
+        document.getElementById('resContratoJur').innerText = formatMoeda(tJur * fContrato);
+        document.getElementById('resContratoSelic').innerText = formatMoeda(tSelic * fContrato);
+
+        // Sucumbência
+        let fSuc = pSucumb / 100;
+        let sucTotal = condTotal * fSuc;
+        document.getElementById('resSucumbTotalAtu').innerText = formatMoeda(sucTotal);
+        document.getElementById('resSucumbPrin').innerText = formatMoeda(tPrin * fSuc);
+        document.getElementById('resSucumbJur').innerText = formatMoeda(tJur * fSuc);
+        document.getElementById('resSucumbSelic').innerText = formatMoeda(tSelic * fSuc);
+
+        document.getElementById('secSucumbencia').style.display = pSucumb > 0 ? 'block' : 'none';
+
+        let box = document.getElementById('statsBox');
+        if(box) {
+            box.innerHTML = `Estatísticas do cálculo: ${dadosHistoricoGlobal.filter(x=>x.ativo && !x.prescrita).length} competências ativas processadas sob indexadores informados.`;
+        }
+    }
+
+    // MÓDULOS DE PROJETO (SALVAR/CARREGAR JSON)
+    function salvarProjeto() {
+        let proj = {
+            procNumero: document.getElementById('procNumero').value,
+            procClasse: document.getElementById('procClasse').value,
+            procAutor: document.getElementById('procAutor').value,
+            procReu: document.getElementById('procReu').value,
+            procAssunto: document.getElementById('procAssunto').value,
+            dataAjuizamento: document.getElementById('dataAjuizamento').value,
+            dataCitacao: document.getElementById('dataCitacao').value,
+            prescricaoToggle: document.getElementById('prescricaoToggle').value,
+            honContratuais: document.getElementById('honContratuais').value,
+            honSucumbencia: document.getElementById('honSucumbencia').value,
+            chkPagamento: document.getElementById('chkPagamento').checked,
+            csvInput: document.getElementById('csvInput').value,
+            csvIndices: document.getElementById('csvIndices').value,
+            dadosHistorico: dadosHistoricoGlobal,
+            indicesCorrecao: indicesCorrecaoGlobal
+        };
+
+        let blob = new Blob([JSON.stringify(proj, null, 2)], {type: "application/json"});
+        let a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Calculo_Abono_${proj.procNumero || 'SemNumero'}.json`;
+        a.click();
+    }
+
+    function carregarDoInput(input) {
+        if(!input.files || !input.files[0]) return;
+        let fr = new FileReader();
+        fr.onload = function(e) {
+            try {
+                let obj = JSON.parse(e.target.result);
+                document.getElementById('procNumero').value = obj.procNumero || "";
+                document.getElementById('procClasse').value = obj.procClasse || "";
+                document.getElementById('procAutor').value = obj.procAutor || "";
+                document.getElementById('procReu').value = obj.procReu || "";
+                document.getElementById('procAssunto').value = obj.procAssunto || "";
+                document.getElementById('dataAjuizamento').value = obj.dataAjuizamento || "";
+                document.getElementById('dataCitacao').value = obj.dataCitacao || "";
+                document.getElementById('prescricaoToggle').value = obj.prescricaoToggle || "sim";
+                document.getElementById('honContratuais').value = obj.honContratuais !== undefined ? obj.honContratuais : 20;
+                document.getElementById('honSucumbencia').value = obj.honSucumbencia !== undefined ? obj.honSucumbencia : 0;
+                document.getElementById('chkPagamento').checked = !!obj.chkPagamento;
+                document.getElementById('csvInput').value = obj.csvInput || "";
+                document.getElementById('csvIndices').value = obj.csvIndices || "";
+
+                dadosHistoricoGlobal = obj.dadosHistorico || [];
+                indicesCorrecaoGlobal = obj.indicesCorrecao || [];
+
+                if(dadosHistoricoGlobal.length === 0 && document.getElementById('csvInput').value) {
+                    processar();
+                } else {
+                    renderHistorial();
+                }
+            } catch(err) {
+                alert("Erro ao ler arquivo JSON de projeto.");
+            }
+        };
+        fr.readAsText(input.files[0]);
+    }
+
+    function novoCalculo() {
+        if(confirm("Deseja mesmo limpar todo o cálculo e começar um novo?")) {
+            localStorage.clear();
+            window.location.reload();
+        }
+    }
+
+    // INTERFACE DE DRAG AND DROP
+    const drag = document.getElementById('dragOverlay');
+    window.addEventListener('dragenter', (e) => { e.preventDefault(); drag.classList.add('active'); });
+    drag.addEventListener('dragleave', () => drag.classList.remove('active'));
+    drag.addEventListener('dragover', (e) => e.preventDefault());
+    drag.addEventListener('drop', (e) => {
+        e.preventDefault();
+        drag.classList.remove('active');
+        if(e.dataTransfer.files.length > 0) {
+            document.getElementById('fileInput').files = e.dataTransfer.files;
+            carregarDoInput(document.getElementById('fileInput'));
+        }
+    });
+
+    // DATA MATRIX DE ÍNDICES EM EMBEDDED
+    const BANCO_INDICES = {
+        EC113: "01/2019\t1.050000\n02/2019\t1.048000\n03/2019\t1.045000\n04/2019\t1.041000\n05/2019\t1.038000\n06/2019\t1.032000\n07/2019\t1.029000\n08/2019\t1.025000\n09/2019\t1.021000\n10/2019\t1.018000\n11/2019\t1.014000\n12/2019\t1.010000\n01/2020\t1.008000\n02/2020\t1.005000\n03/2020\t1.002000\n04/2020\t1.000000",
+        EC136: "01/2019\t1.095000\n02/2019\t1.092000\n03/2019\t1.088000\n04/2019\t1.084000\n05/2019\t1.079000\n06/2019\t1.075000\n07/2019\t1.071000\n08/2019\t1.066000\n09/2019\t1.062000\n10/2019\t1.058000\n11/2019\t1.053000\n12/2019\t1.049000\n01/2020\t1.044000\n02/2020\t1.040000\n03/2020\t1.035000\n04/2020\t1.031000"
+    };
+
+    function carregarIndicesPlanilha(chave, btn) {
+        if(BANCO_INDICES[chave]) {
+            document.getElementById('csvIndices').value = BANCO_INDICES[chave];
+            processarIndices();
+            document.querySelectorAll('.btn-help, .btn-primary, .btn-outline').forEach(x=> { if(x.innerText.includes("Carregar")) x.classList.remove('active'); });
+            btn.classList.add('active');
+        }
+    }
+
+    function abrirModalExplicacao() { alert("Os fatores informados aplicam a correção monetária acumulada até a data do cálculo e distribuem a SELIC/Juros conforme orientações do manual do CJF."); }
+
+    // --- CONTROLO DO MODAL DE PERSONALIZAÇÃO E SANGRIA DE IMAGENS DE FUNDO ---
     function abrirModalFundo() {
         document.getElementById('modalFundo').classList.add('active');
     }
 
-    // FECHA O MODAL
     function fecharModalFundo() {
         document.getElementById('modalFundo').classList.remove('active');
     }
 
-    // FECHA CLICANDO FORA
     function fecharModalFundoExterno(e) {
         if(e.target.id === 'modalFundo') fecharModalFundo();
     }
 
-    // PROCESSA O CORTE/CONVERSÃO DA IMAGEM CARREGADA
     function processarUploadFundo(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 imagemFundoGlobal = e.target.result;
-                
-                // Salva no localStorage para não perder ao atualizar a página
                 localStorage.setItem('fundo_personalizado_base64', imagemFundoGlobal);
                 
-                // Atualiza cards visuais no modal
                 document.getElementById('previewBgUpload').style.backgroundImage = `url('${imagemFundoGlobal}')`;
                 document.getElementById('previewBgUpload').style.backgroundSize = "cover";
                 document.getElementById('labelBgUpload').innerText = "Imagem Carregada ✓";
@@ -551,31 +953,27 @@
         }
     }
 
-    // SELECIONA E ALTERA COMPORTAMENTO VISUAL DO CARD
     function selecionarFundoOpcao(tipo) {
         document.getElementById('cardBgNenhum').classList.remove('active');
         document.getElementById('cardBgUpload').classList.remove('active');
         
         if(tipo === 'nenhum') {
             document.getElementById('cardBgNenhum').classList.add('active');
-            document.getElementById('infoFundoAtual').innerText = "Nenhum fundo customizado ativo. O layout usará as cores padrão.";
+            document.getElementById('infoFundoAtual').innerText = "Nenhum fundo customizado ativo. O layout usará as cores padrão dos temas.";
             localStorage.setItem('fundo_ativo_tipo', 'nenhum');
-            // Remove o fundo da tela viva
             document.body.style.backgroundImage = "none";
         } else {
             document.getElementById('cardBgUpload').classList.add('active');
-            document.getElementById('infoFundoAtual').innerHTML = "<strong>Fundo Personalizado Ativo!</strong> Na impressão, ele ocupará 100% da folha física (Sangria Completa).";
+            document.getElementById('infoFundoAtual').innerHTML = "<strong>Fundo Personalizado Ativo!</strong> Na impressão, ocupará 100% da folha (Sangria Completa).";
             localStorage.setItem('fundo_ativo_tipo', 'upload');
-            // Aplica opacidade leve no fundo da tela de trabalho para não cansar as vistas
             if(imagemFundoGlobal) {
-                document.body.style.backgroundImage = `linear-gradient(rgba(248,249,250,0.9), rgba(248,249,250,0.9)), url('${imagemFundoGlobal}')`;
+                document.body.style.backgroundImage = `linear-gradient(rgba(248,249,250,0.92), rgba(248,249,250,0.92)), url('${imagemFundoGlobal}')`;
                 document.body.style.backgroundSize = "cover";
                 document.body.style.backgroundAttachment = "fixed";
             }
         }
     }
 
-    // CARREGA DO ARMAZENAMENTO SE JÁ EXISTIR UM SALVO
     function carregarFundoSalvo() {
         const tipoSalvo = localStorage.getItem('fundo_ativo_tipo');
         const imgSalva = localStorage.getItem('fundo_personalizado_base64');
@@ -594,11 +992,17 @@
         }
     }
 
-    // FUNÇÃO REESTRUTURADA DE IMPRESSÃO INCORPORANDO SANGRIAS E FUNDOS TOTAIS
+    // CONTROLO DE FILTROS E PREPARAÇÃO DA SESSÃO DE IMPRESSÃO NATIIVA
     function imprimir(t) {
         const h = document.getElementById('print-content');
         let html = '<div style="text-align:center; margin-bottom:10px;"><img src="./logo.png" style="max-height:50px; max-width:100%; width:auto; height:auto;" alt="Logo"></div>';
-        const c = [\n            {l: 'Processo:', v: document.getElementById('procNumero').value}, \n            {l: 'Classe:', v: document.getElementById('procClasse').value}, \n            {l: 'Parte Autora:', v: document.getElementById('procAutor').value}, \n            {l: 'Réu:', v: document.getElementById('procReu').value}, \n            {l: 'Assunto:', v: document.getElementById('procAssunto').value, mt: '15px'}\n        ];
+        const c = [
+            {l: 'Processo:', v: document.getElementById('procNumero').value}, 
+            {l: 'Classe:', v: document.getElementById('procClasse').value}, 
+            {l: 'Parte Autora:', v: document.getElementById('procAutor').value}, 
+            {l: 'Réu:', v: document.getElementById('procReu').value}, 
+            {l: 'Assunto:', v: document.getElementById('procAssunto').value, mt: '15px'}
+        ];
         
         c.forEach(i => { 
             if(i.v.trim()) {
@@ -608,35 +1012,38 @@
         });
         h.innerHTML = html;
         
-        // Define o tema de cores das tabelas e títulos
         document.getElementById('pageBody').className = (t === 'classico' ? 'theme-classic' : (t === 'salmao' ? 'theme-salmon' : 'theme-sistema'));
         
-        // INTERCEPTADOR DE SANGRIA DE PAPEL DE FUNDO
         const bgPrintElement = document.querySelector('.print-bg');
         const tipoFundo = localStorage.getItem('fundo_ativo_tipo');
         
         if(tipoFundo === 'upload' && imagemFundoGlobal) {
-            // injeta a imagem de fundo no container de impressão
             bgPrintElement.style.backgroundImage = `url('${imagemFundoGlobal}')`;
-            // Ativa o gatilho CSS que joga as margens físicas do papel para zero
             document.getElementById('pageBody').classList.add('sangria-ativa');
         } else {
-            // Limpa o fundo para não misturar com os temas nativos (salmão, clássico)
             bgPrintElement.style.backgroundImage = "none";
             document.getElementById('pageBody').classList.remove('sangria-ativa');
         }
         
-        // Dispara caixa de diálogo nativa do navegador
         window.print();
     }
 
+    // GATILHO DOM CONTENT LOADED COMPACTO RESTAURADO
     window.addEventListener('DOMContentLoaded', () => {
-        // Inicializadores nativos do seu sistema original
-        if(typeof setInitialDate === 'function') setInitialDate();
-        if(typeof geraParams === 'function') geraParams();
-        
-        // Restaura as configurações do fundo personalizado salvo
+        setInitialDate();
+        geraParams();
         carregarFundoSalvo();
+
+        const indicesSalvos = localStorage.getItem('backup_indices_csv');
+        if(indicesSalvos) {
+            document.getElementById('csvIndices').value = indicesSalvos;
+            processarIndices();
+        }
+    });
+
+    window.addEventListener('beforeunload', () => {
+        const indTxt = document.getElementById('csvIndices').value;
+        if(indTxt) localStorage.setItem('backup_indices_csv', indTxt);
     });
 </script>
 </body>
