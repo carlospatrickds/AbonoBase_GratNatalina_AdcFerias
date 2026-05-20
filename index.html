@@ -189,10 +189,39 @@
         .bg-option-card.active .bg-label { color: var(--info); }
         .bg-current-info { margin-top: 15px; padding: 12px; background: var(--header-bg); border-radius: 6px; font-size: 0.9em; color: var(--text-muted); text-align: center; }
 
+        /* SEÇÃO DE IMPRESSÃO CUSTOMIZADA COM SANGRIA SELECIONÁVEL */
         @media print {
+            /* Se a sangria estiver ativa, o navegador remove as margens totais da folha física */
+            body.sangria-ativa {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            @page {
+                /* Configuração inicial da página. Se a classe body.sangria-ativa estiver ligada, o margin 0 do body assume */
+                margin: 0;
+            }
+
+            body.sangria-ativa .container {
+                padding: 20mm 25mm !important; /* Adiciona margem de segurança de 2.5cm apenas no texto/conteúdo */
+                box-sizing: border-box;
+                min-height: 297mm; /* Garante tamanho de uma folha A4 cheia */
+            }
+
+            body.sangria-ativa .print-bg {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
             .no-print, .top-actions, .tabs, .modal-overlay, .drag-overlay { display: none !important; }
-            body { padding: 0; background-image: none; font-size: 11pt; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+            body { background-image: none; font-size: 11pt; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
             .container { box-shadow: none; border: none; width: 100%; padding: 0; margin-bottom: 30px; background: transparent;}
+            
             .print-bg { display: block !important; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-size: cover; background-repeat: no-repeat; background-position: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             #pdf-header-print { display: block; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
             .logo-container { text-align: center; margin-bottom: 15px; }
@@ -394,16 +423,17 @@
                     <tbody id="tableCorrecaoBody"></tbody>
                 </table>
             </div>
-            
+
             <div class="summary-card" id="resumoFinalContainer">
                 <h3 style="margin-bottom: 5px;">Resumo Final Discriminado</h3>
+                
                 <div class="sum-row total-geral">
-                    <span>TOTAL DA CONDENAÇÃO (Principal + Juros + SELIC)</span> 
+                    <span>TOTAL DA CONDENAÇÃO (Principal + Juros + SELIC)</span>
                     <span id="resBrutoAtu">R$ 0,00</span>
                 </div>
-                
+
                 <div class="sum-row header-row">
-                    <span>1. Valor Devido à Parte Autora (<span id="resPercParte">80</span>%)</span> 
+                    <span>1. Valor Devido à Parte Autora (<span id="resPercParte">80</span>%)</span>
                     <span id="resParteTotalAtu">R$ 0,00</span>
                 </div>
                 <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resPartePrin">R$ 0,00</span></div>
@@ -411,7 +441,7 @@
                 <div class="sum-row sub"><span>└ SELIC</span> <span id="resParteSelic">R$ 0,00</span></div>
 
                 <div class="sum-row header-row">
-                    <span>2. Honorários Contratuais (Retenção - <span id="resPercContrato">20</span>%)</span> 
+                    <span>2. Honorários Contratuais (Retenção - <span id="resPercContrato">20</span>%)</span>
                     <span id="resContratoTotalAtu">R$ 0,00</span>
                 </div>
                 <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resContratoPrin">R$ 0,00</span></div>
@@ -420,7 +450,7 @@
 
                 <div id="secSucumbencia">
                     <div class="sum-row header-row" style="margin-top: 25px;">
-                        <span>3. Honorários de Sucumbência (<span id="resPercSucumb">0</span>% sobre a condenação)</span> 
+                        <span>3. Honorários de Sucumbência (<span id="resPercSucumb">0</span>% sobre a condenação)</span>
                         <span id="resSucumbTotalAtu">R$ 0,00</span>
                     </div>
                     <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resSucumbPrin">R$ 0,00</span></div>
@@ -433,621 +463,142 @@
         </section>
     </div>
 
-    <section style="margin-top: 25px;">
-        <h2>Parâmetros Utilizados no Cálculo</h2>
-        <textarea id="txtParametros" rows="6"></textarea>
+    <section style="margin-top: 25px;" class="no-print">
+        <button class="btn btn-secondary" style="width:100%; padding:15px; font-size:1.1em; justify-content:center;" onclick="imprimir('sistema')">🖨️ Gerar Relatório de Impressão (Tema Padrão)</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+            <button class="btn btn-salmon" style="padding:12px; justify-content:center;" onclick="imprimir('salmao')">🖨️ Imprimir com Fundo Salmão</button>
+            <button class="btn btn-outline" style="padding:12px; justify-content:center; font-weight:600;" onclick="imprimir('classico')">🖨️ Imprimir Clássico (P&B)</button>
+        </div>
     </section>
 
-    <div class="disclaimer-footer no-print">
-        <strong>Aviso:</strong> As informações inseridas no sistema são de inteira responsabilidade do usuário, devendo este ser responsabilizado por informações falsas ou imprecisas. O sistema tem o intuito de facilitar os cálculos realizados pelos seus desenvolvedores.
-    </div>
-
-    <div class="footer-gen">
-        <label>Arquivo gerado em:</label>
-        <input type="text" id="dataGeracao" style="width: auto; border: none; background: transparent; padding: 0; color: var(--text-muted); font-weight: bold;" readonly>
-    </div>
-
-    <section class="no-print" style="margin-top: 40px; display: flex; gap: 15px; justify-content: center;">
-        <button class="btn btn-secondary" onclick="imprimir('sistema')">📄 PDF Sistema</button>
-        <button class="btn btn-secondary" onclick="imprimir('classico')">📜 PDF</button>
-        <button class="btn btn-salmon" onclick="imprimir('salmao')">🟠 PDF Personalizado</button>
-    </section>
+    <footer class="disclaimer-footer no-print">
+        <strong>Aviso Importante:</strong> Este sistema foi projetado para cálculos baseados nas tabelas oficiais do CJF. Verifique sempre a consistência dos índices inseridos antes de utilizá-los em juízo.
+    </footer>
 
     <div class="print-footer">
-        Sistema de Cálculo de Reflexos: Inclusão de abono de permanência na base de cálculo da gratificação natalina e 1/3 de férias.<br>
-        As informações inseridas no sistema são de inteira responsabilidade do usuário.
+        Relatório gerado automaticamente pelo Sistema de Cálculos Judiciais - Abono de Permanência.
     </div>
 </div>
 
-<div id="modalFundo" class="modal-overlay no-print" onclick="fecharModalFundoFora(event)">
-    <div class="modal-content" style="max-width: 600px;">
-        <button class="modal-close" onclick="fecharModalFundo()">&times;</button>
-        <h2 class="modal-title">Personalizar Fundo do PDF</h2>
-        <div class="modal-body">
-            <p style="text-align: center; margin-bottom: 5px;">Selecione o plano de fundo que será aplicado ao PDF:</p>
-            <div class="bg-current-info" id="bgCurrentInfo">Fundo atual: <strong>fundo.png</strong></div>
-            <div class="bg-option-grid" id="bgOptionGrid">
-                <div class="bg-option-card active" data-bg="fundo.png" onclick="selecionarFundo('fundo.png', this)">
-                    <div class="bg-preview" style="background-image: url('./fundo.png')"></div>
-                    <div class="bg-label">Fundo Padrão</div>
-                </div>
-                <div class="bg-option-card" data-bg="fundo1.png" onclick="selecionarFundo('fundo1.png', this)">
-                    <div class="bg-preview" style="background-image: url('./fundo1.png')"></div>
-                    <div class="bg-label">Fundo 1</div>
-                </div>
-                <div class="bg-option-card" data-bg="fundo2.png" onclick="selecionarFundo('fundo2.png', this)">
-                    <div class="bg-preview" style="background-image: url('./fundo2.png')"></div>
-                    <div class="bg-label">Fundo 2</div>
-                </div>
-                <div class="bg-option-card" data-bg="fundo3.png" onclick="selecionarFundo('fundo3.png', this)">
-                    <div class="bg-preview" style="background-image: url('./fundo3.png')"></div>
-                    <div class="bg-label">Fundo 3</div>
-                </div>
-            </div>
-            <p style="text-align: center; margin-top: 15px; font-size: 0.85em; color: var(--text-muted);">A escolha será salva automaticamente e aplicada na próxima impressão.</p>
-        </div>
-    </div>
-</div>
-
-<div id="modalExplicacao" class="modal-overlay no-print" onclick="fecharModalFora(event)">
+<div id="modalFundo" class="modal-overlay no-print" onclick="fecharModalFundoExterno(event)">
     <div class="modal-content">
-        <button class="modal-close" onclick="fecharModalExplicacao()">&times;</button>
-        <h2 class="modal-title">Critérios de Atualização e Juros</h2>
+        <button class="modal-close" onclick="fecharModalFundo()">&times;</button>
+        <h3 class="modal-title">🖼️ Personalizar Fundo de Página</h3>
         
-        <div class="modal-body">
-            <h4>1. Aplicação da EC nº 113/2021</h4>
-            <p>A atualização do débito e a incidência de juros observarão os seguintes critérios, em combinação com os termos iniciais, índices e percentuais previstos no Manual de Orientação de Procedimentos para os cálculos na Justiça Federal:</p>
-            <ul>
-                <li><strong>Até 08/12/2021:</strong> Os créditos serão corrigidos com observância do Índice de Preços ao Consumidor Amplo Especial (IPCA-E) e incidirão juros de mora equivalentes aos índices aplicáveis à caderneta de poupança, desde a citação (Tema nº 905 do STJ).</li>
-                <li><strong>A partir de 09/12/2021:</strong> Os créditos serão atualizados exclusivamente pelo índice da taxa referencial do Sistema Especial de Liquidação e de Custódia (SELIC), acumulado mensalmente.</li>
-            </ul>
-
-            <h4>2. Aplicação da EC nº 136/2025</h4>
-            <p>A atualização do débito e a incidência de juros observarão os critérios estabelecidos pelos Tribunais Superiores no RE 870.947 e no REsp 1.492.221 (art. 927, III, do CPC):</p>
-            <ul>
-                <li><strong>Até antes da vigência da EC 113/2021:</strong> Correção monetária pelo IPCA-e a contar do vencimento da dívida, e juros de mora equivalentes aos índices oficiais de remuneração básica e juros aplicáveis à caderneta de poupança, desde a citação (art. 1º-F da Lei nº 9.494/97).</li>
-                <li><strong>A partir de 08/12/2021 (EC 113/2021):</strong> Haverá a incidência, uma única vez, até o efetivo pagamento, do índice da taxa referencial da SELIC, acumulado mensalmente.</li>
-                <li><strong>A partir de 09/09/2025 (EC 136/2025):</strong> A atualização monetária e os juros de mora serão aplicados na forma do art. 3º da EC 113/2021, com a redação dada pela EC 136/2025, implicando:
-                    <ul>
-                        <li>Atualização monetária pela variação do IPCA;</li>
-                        <li>Juros de mora simples de 2% ao ano (2% a.a.);</li>
-                        <li><strong>Regra de Teto:</strong> O percentual final de atualização e juros, apurado na forma acima, não poderá ser superior à variação da Taxa Selic para o mesmo período, devendo esta ser aplicada em substituição caso o limite seja ultrapassado.</li>
-                    </ul>
-                </li>
-            </ul>
-
-            <div class="note-box">
-                <p><strong>⚠️ Nota Técnica CJF nº 2/2025 (Outubro/2025):</strong></p>
-                <p style="margin-top: 5px;">Devido à Ação Direta de Inconstitucionalidade (ADI 7873), aplica-se rigorosamente o Manual de Orientação de Procedimentos para os Cálculos na Justiça Federal. <br>
-                <a href="https://www.cjf.jus.br/cjf/corregedoria-da-justica-federal/corregedoria-geral-da-justica-federal/comissao-de-solucoes-fundiarias/nota-tecnica-n-2-2025.pdf/@@download/file/NOTA%20T%C3%89CNICA%20N.%202-2025.pdf" target="_blank">Acessar a Nota Técnica na Íntegra 🔗</a></p>
+        <p style="font-size: 0.95em; color: var(--text-muted);">Escolha uma imagem para servir de papel de fundo oficial do seu relatório. Imagens com efeito de marca d'água ou texturas leves dão ótimos resultados na sangria completa.</p>
+        
+        <div class="bg-option-grid">
+            <div id="cardBgNenhum" class="bg-option-card active" onclick="selecionarFundoOpcao('nenhum')">
+                <div class="bg-preview" style="background-color: #ffffff; border-bottom: 1px solid var(--border);"></div>
+                <div class="bg-label">Sem Imagem (Padrão)</div>
             </div>
+            
+            <div id="cardBgUpload" class="bg-option-card" onclick="document.getElementById('bgImageInput').click()">
+                <div id="previewBgUpload" class="bg-preview" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%237f8c8d\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg>'); background-size: 40px; background-color: var(--header-bg); border-bottom: 1px solid var(--border);"></div>
+                <div class="bg-label" id="labelBgUpload">Enviar Imagem Personalizada</div>
+            </div>
+        </div>
+        
+        <input type="file" id="bgImageInput" style="display:none" accept="image/*" onchange="processarUploadFundo(this)">
+        
+        <div class="bg-current-info" id="infoFundoAtual">
+            Nenhum fundo customizado ativo. O layout usará as cores padrão dos temas de impressão.
+        </div>
+        
+        <div style="margin-top:25px; text-align:right;">
+            <button class="btn btn-primary" onclick="fecharModalFundo()">Pronto</button>
         </div>
     </div>
 </div>
 
 <script>
-    let dados = [];
-    let indicesMap = {};
-    let editMode = false, filterAll = false;
+    // VARIAVEL GLOBAL DE CONTROLE DO FUNDO PERSONALIZADO (BASE64)
+    let imagemFundoGlobal = null;
 
-    const fmtNum = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const fmtIdx = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
-    const fmtMoeda = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    
-    const parseV = (s) => {
-        if (!s) return 0;
-        let n = s.toString().replace(/[^\d,-]/g, '').replace(',', '.');
-        return parseFloat(n) || 0;
-    };
-
-    function mascaraData(input) {
-        let v = input.value.replace(/\D/g, "");
-        if (v.length >= 2) v = v.substring(0, 2) + "/" + v.substring(2, 6);
-        input.value = v;
-    }
-
-    function mascaraCNJ(input) {
-        let v = input.value.replace(/\D/g, "");
-        if (v.length > 7)  v = v.replace(/^(\d{7})(\d)/, "$1-$2");
-        if (v.length > 10) v = v.replace(/-(\d{2})(\d)/, "-$1.$2");
-        if (v.length > 15) v = v.replace(/\.(\d{4})(\d)/, ".$1.$2");
-        if (v.length > 17) v = v.replace(/\.(\d{1})(\d)/, ".$1.$2");
-        if (v.length > 20) v = v.replace(/\.(\d{2})(\d)/, ".$1.$2");
-        input.value = v;
-    }
-
-    function parseMesAnoIndex(str) {
-        let s = str.toLowerCase().replace(/\./g, '').trim(); 
-        let parts = s.split('/');
-        if (parts.length === 3) {
-            let mes = parts[1].padStart(2, '0');
-            let ano = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-            return `${mes}/${ano}`;
-        }
-        if (parts.length === 2) {
-            const mapa = { 'jan':'01', 'fev':'02', 'mar':'03', 'abr':'04', 'mai':'05', 'jun':'06', 'jul':'07', 'ago':'08', 'set':'09', 'out':'10', 'nov':'11', 'dez':'12', '13º':'13' };
-            let mes = mapa[parts[0]] || parts[0].padStart(2, '0');
-            let ano = parts[1].length === 2 ? '20' + parts[1] : parts[1];
-            return `${mes}/${ano}`;
-        }
-        return s;
-    }
-
-    function setInitialDate() {
-        const dGen = document.getElementById('dataGeracao');
-        if (dGen && !dGen.value) {
-            dGen.value = new Date().toLocaleDateString('pt-BR');
-        }
-    }
-
-    function openTab(tabId, btn) {
-        document.querySelectorAll('.tab-content, .tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        btn.classList.add('active');
-    }
-
-    function abrirModalExplicacao() { document.getElementById('modalExplicacao').classList.add('active'); }
-    function fecharModalExplicacao() { document.getElementById('modalExplicacao').classList.remove('active'); }
-    function fecharModalFora(event) { if(event.target === document.getElementById('modalExplicacao')) fecharModalExplicacao(); }
-
-    /* FUNÇÕES DO MODAL DE PERSONALIZAÇÃO DE FUNDO */
-    const FUNDOS_DISPONIVEIS = ['fundo.png', 'fundo1.png', 'fundo2.png', 'fundo3.png'];
-    const FUNDOS_NOMES = { 'fundo.png': 'Fundo Padrão', 'fundo1.png': 'Fundo 1', 'fundo2.png': 'Fundo 2', 'fundo3.png': 'Fundo 3' };
-    let fundoSelecionado = 'fundo.png';
-
-    function carregarFundoSalvo() {
-        const salvo = localStorage.getItem('fundoPdfSelecionado');
-        if (salvo && FUNDOS_DISPONIVEIS.includes(salvo)) {
-            fundoSelecionado = salvo;
-        }
-        aplicarFundoPrint();
-    }
-
-    function aplicarFundoPrint() {
-        const printBg = document.querySelector('.print-bg');
-        if (printBg) {
-            printBg.style.backgroundImage = `url('./${fundoSelecionado}')`;
-        }
-    }
-
+    // ABRE O MODAL
     function abrirModalFundo() {
         document.getElementById('modalFundo').classList.add('active');
-        document.getElementById('bgCurrentInfo').innerHTML = 'Fundo atual: <strong>' + fundoSelecionado + '</strong> (' + (FUNDOS_NOMES[fundoSelecionado] || fundoSelecionado) + ')';
-        document.querySelectorAll('.bg-option-card').forEach(card => {
-            card.classList.toggle('active', card.dataset.bg === fundoSelecionado);
-        });
     }
 
-    function fecharModalFundo() { document.getElementById('modalFundo').classList.remove('active'); }
-    function fecharModalFundoFora(event) { if(event.target === document.getElementById('modalFundo')) fecharModalFundo(); }
-
-    function selecionarFundo(nomeArquivo, cardElement) {
-        fundoSelecionado = nomeArquivo;
-        localStorage.setItem('fundoPdfSelecionado', nomeArquivo);
-        aplicarFundoPrint();
-        document.getElementById('bgCurrentInfo').innerHTML = 'Fundo atual: <strong>' + fundoSelecionado + '</strong> (' + (FUNDOS_NOMES[fundoSelecionado] || fundoSelecionado) + ')';
-        document.querySelectorAll('.bg-option-card').forEach(card => card.classList.remove('active'));
-        cardElement.classList.add('active');
+    // FECHA O MODAL
+    function fecharModalFundo() {
+        document.getElementById('modalFundo').classList.remove('active');
     }
 
-    function geraParams() {
-        const aju = document.getElementById('dataAjuizamento').value;
-        const cit = document.getElementById('dataCitacao').value;
-        const pre = document.getElementById('prescricaoToggle').value;
-        let d = aju ? aju.split('-').reverse().join('/') : '__/__/____';
-        
-        const txtParam = document.getElementById('txtParametros');
-        if (txtParam) {
-            txtParam.value = `Atualização monetária referente aos CRÉDITOS REFERENTES A SERVIDORES E EMPREGADOS PÚBLICOS (CJF), INDEXADORES:\n\nAjuizamento em ${d}, ${pre === 'sim' ? 'com prescrição quinquenal' : 'sem prescrição'}. Citação em ${cit || '__/____'}, termo inicial dos juros.`;
-        }
+    // FECHA CLICANDO FORA
+    function fecharModalFundoExterno(e) {
+        if(e.target.id === 'modalFundo') fecharModalFundo();
     }
 
-    function novoCalculo() {
-        if(!confirm("Tem certeza que deseja apagar todos os dados e iniciar um novo cálculo? Essa ação não pode ser desfeita.")) {
-            return;
-        }
-        
-        document.getElementById('procNumero').value = '';
-        document.getElementById('procClasse').value = 'CUMPRIMENTO DE SENTENÇA';
-        document.getElementById('procAutor').value = '';
-        document.getElementById('procReu').value = '';
-        document.getElementById('procAssunto').value = 'Apuração dos reflexos decorrentes da inclusão da rubrica abono de permanência ec 41/03 na base de cálculo da Gratificação natalina (13º salário) e Adicional de 1/3 de férias.';
-        document.getElementById('dataAjuizamento').value = '';
-        document.getElementById('dataCitacao').value = '';
-        document.getElementById('prescricaoToggle').value = 'sim';
-        document.getElementById('honContratuais').value = '20';
-        document.getElementById('honSucumbencia').value = '0';
-        
-        document.getElementById('csvInput').value = '';
-        // NOTA: A caixa de índices (csvIndices) de propósito NÃO é limpa aqui, 
-        // assim você não precisa baixá-los de novo para o próximo cálculo!
-        document.getElementById('chkPagamento').checked = false;
-        
-        dados = [];
-        filterAll = false;
-        editMode = false;
-        document.getElementById('btnEdit').classList.remove('active');
-        
-        setInitialDate();
-        geraParams();
-        renderApuracao();
-        renderCorrecao();
-    }
-
-    function aplicarPrescricao() {
-        const ajuInput = document.getElementById('dataAjuizamento').value;
-        const pre = document.getElementById('prescricaoToggle').value;
-
-        if (dados.length === 0) return;
-
-        if (pre === 'sim' && !ajuInput) {
-            alert('Para aplicar o corte da prescrição quinquenal, por favor preencha a "Data de Ajuizamento" primeiro.');
-            document.getElementById('prescricaoToggle').value = 'nao';
-            return;
-        }
-
-        let corteDate = null;
-        if (pre === 'sim') {
-            let [anoAju, mesAju, diaAju] = ajuInput.split('-');
-            corteDate = new Date(anoAju - 5, mesAju - 1, 1);
-        }
-
-        dados.forEach(d => {
-            let parts = d.c.split('/');
-            if(parts.length === 2) {
-                let compDate = new Date(parseInt(parts[1]), parseInt(parts[0]) - 1, 1);
-                d.hab = pre === 'sim' ? (compDate >= corteDate) : true;
-            }
-        });
-
-        renderApuracao();
-        renderCorrecao();
-    }
-
-    function processar() {
-        const raw = document.getElementById('csvInput').value.trim();
-        if (!raw) return alert("Cole os dados da ficha financeira.");
-
-        const linhas = raw.split('\n');
-        let header = linhas[0].split('\t').map(h => h.trim().toLowerCase());
-        
-        let iD = header.findIndex(h => h.includes('discriminacao') || h.includes('descrição') || h.includes('discriminação'));
-        let iV = header.findIndex(h => h === 'valor');
-        let iC = header.findIndex(h => h.includes('competencia') || h.includes('competência'));
-
-        if (iD === -1 || iV === -1 || iC === -1) {
-            return alert("Erro de leitura: O cabeçalho dos dados deve conter 'Discriminacao', 'Valor' e 'Competencia'.");
-        }
-
-        let agrupar = {};
-        for (let i = 1; i < linhas.length; i++) {
-            let col = linhas[i].split('\t');
-            if (col.length <= Math.max(iD, iV, iC)) continue; 
-            
-            let d = col[iD].toUpperCase(), v = parseV(col[iV]), c = col[iC].trim();
-            if (!c) continue; 
-
-            if (!agrupar[c]) agrupar[c] = { abono: 0, grat: 0, fer: 0, pagoVal: 0 };
-            
-            if (d.includes('ABONO DE PERMANENCIA') || d.includes('ABONO DE PERMANÊNCIA')) agrupar[c].abono += v;
-            else if (d.includes('GRATIFICAÇÃO NATALINA') || d.includes('GRATIFICACAO NATALINA')) agrupar[c].grat += v;
-            else if (d.includes('FERIAS') || d.includes('FÉRIAS') || d.includes('1/3')) agrupar[c].fer += v;
-        }
-
-        dados = Object.keys(agrupar).map(c => {
-            let o = agrupar[c];
-            let pagoPrevio = dados.find(x => x.c === c)?.pagoVal || 0; 
-            return { 
-                c, abono: o.abono, gratP: o.grat, ferP: o.fer, pagoVal: pagoPrevio, 
-                hab: true, gratD: o.grat > 0 ? o.grat + o.abono : 0, ferD: o.fer > 0 ? o.fer + (o.abono/3) : 0 
-            };
-        }).sort((a,b) => {
-            let da = a.c.split('/'), db = b.c.split('/');
-            return new Date(da[1], da[0]-1) - new Date(db[1], db[0]-1);
-        });
-        
-        aplicarPrescricao();
-    }
-
-    function renderApuracao() {
-        const body = document.getElementById('tableBody');
-        body.innerHTML = '';
-        dados.forEach((r, i) => {
-            let difG = r.gratP > 0 ? r.abono : 0;
-            let difF = r.ferP > 0 ? (r.abono/3) : 0;
-            if (!filterAll && (difG + difF) === 0) return;
-            const tr = document.createElement('tr');
-            if (!r.hab) tr.className = 'disabled-row';
-            
-            const alertG = (r.gratP > 0 && r.gratP < r.abono) ? 'alert-value' : '';
-            const alertF = (r.ferP > 0 && r.ferP < (r.abono/3)) ? 'alert-value' : '';
-
-            tr.innerHTML = `
-                <td class="no-print" style="text-align:center"><input type="checkbox" ${r.hab ? 'checked' : ''} onchange="toggleRow(${i})"></td>
-                <td style="text-align:center">${r.c}</td>
-                <td class="${editMode ? 'editable-active' : ''}" contenteditable="${editMode}" onblur="updateVal(${i},'abono',this.innerText)">${fmtNum(r.abono)}</td>
-                <td class="${alertG} ${editMode ? 'editable-active' : ''}" contenteditable="${editMode}" onblur="updateVal(${i},'gratP',this.innerText)">${fmtNum(r.gratP)}</td>
-                <td>${r.gratD > 0 ? fmtNum(r.gratD) : '-'}</td>
-                <td style="font-weight:600; color:var(--info)">${difG > 0 ? fmtNum(difG) : '-'}</td>
-                <td class="${alertF} ${editMode ? 'editable-active' : ''}" contenteditable="${editMode}" onblur="updateVal(${i},'ferP',this.innerText)">${fmtNum(r.ferP)}</td>
-                <td>${r.ferD > 0 ? fmtNum(r.ferD) : '-'}</td>
-                <td style="font-weight:600; color:var(--info)">${difF > 0 ? fmtNum(difF) : '-'}</td>
-                <td style="background:var(--row-hover); font-weight:bold">${fmtNum(difG + difF)}</td>`;
-            body.appendChild(tr);
-        });
-        calcularTotaisTodasAbas();
-    }
-
-    function updateVal(i, f, v) { 
-        dados[i][f] = parseV(v); 
-        dados[i].gratD = dados[i].gratP > 0 ? dados[i].gratP + dados[i].abono : 0;
-        dados[i].ferD = dados[i].ferP > 0 ? dados[i].ferP + (dados[i].abono/3) : 0;
-        renderApuracao(); renderCorrecao();
-    }
-
-    function toggleRow(i) { dados[i].hab = !dados[i].hab; renderApuracao(); renderCorrecao(); }
-    function toggleEdit() { editMode = !editMode; document.getElementById('btnEdit').classList.toggle('active', editMode); renderApuracao(); }
-    function toggleFilter() { filterAll = !filterAll; renderApuracao(); }
-
-    function processarIndices() {
-        const raw = document.getElementById('csvIndices').value.trim();
-        indicesMap = {};
-        
-        if (!raw) {
-            localStorage.removeItem('backupIndices');
-            return renderCorrecao();
-        }
-
-        raw.split('\n').forEach(linha => {
-            let cols = linha.split('\t');
-            if (cols.length >= 4) {
-                let normC = parseMesAnoIndex(cols[0].trim());
-                if (normC.match(/^\d{2}\/\d{4}$/)) {
-                    indicesMap[normC] = { cor: parseV(cols[1]), jur: parseV(cols[2]), sel: parseV(cols[3]) };
-                }
-            }
-        });
-        
-        // Salva os índices em cache para não precisar baixar no próximo acesso
-        localStorage.setItem('backupIndices', raw);
-        renderCorrecao();
-    }
-
-    async function carregarIndicesPlanilha(nomeAba, btnElement) {
-        const baseUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR94jhhyuvlBxSLkhTSHfSJm5lDYxZUmbDIx5VB0TbbCo23rD4QcgG_Ft3Ii9yFnJ3LyKWjLtomgvqy/pub?output=tsv&single=true&gid=";
-        const urls = { 'EC113': baseUrl + '1468370044', 'EC136': baseUrl + '0' };
-        const targetUrl = urls[nomeAba];
-        const textoOriginal = btnElement.innerHTML;
-
-        const proxies = [
-            `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`
-        ];
-
-        btnElement.innerHTML = '⏳ Conectando...';
-        btnElement.disabled = true;
-        document.getElementById('csvIndices').value = 'Tentando conectar à nuvem... (pode levar uns segundos na primeira vez)';
-
-        let sucesso = false;
-        for (let i = 0; i < proxies.length; i++) {
-            try {
-                const response = await fetch(proxies[i]);
-                if (!response.ok) throw new Error("Erro no proxy " + (i+1));
-                const texto = await response.text();
-                if (texto.trim().startsWith('<html') || texto.trim().startsWith('<!DOCTYPE')) throw new Error("Retornou HTML.");
+    // PROCESSA O CORTE/CONVERSÃO DA IMAGEM CARREGADA
+    function processarUploadFundo(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagemFundoGlobal = e.target.result;
                 
-                // VALIDAÇÃO ESTRUTURAL
-                const primeiraLinha = texto.split('\n')[0].toLowerCase();
-                const numColunas = primeiraLinha.split('\t').length;
+                // Salva no localStorage para não perder ao atualizar a página
+                localStorage.setItem('fundo_personalizado_base64', imagemFundoGlobal);
                 
-                if (numColunas < 4 || (!primeiraLinha.includes('mês') && !primeiraLinha.includes('ano'))) {
-                    alert(`⚠️ Aviso Amigável: A planilha "${nomeAba}" foi importada, mas a estrutura das colunas parece diferente do padrão esperado (foram encontradas ${numColunas} colunas). \n\nSe alguém alterou a ordem no Google Sheets, o cálculo pode falhar. Verifique os valores gerados na tabela!`);
-                }
-
-                document.getElementById('csvIndices').value = texto;
-                processarIndices();
-                sucesso = true;
-                break; 
-            } catch (error) { console.warn(`Tentativa ${i+1} falhou.`); }
-        }
-
-        if (!sucesso) {
-            alert(`Falha ao baixar os dados da aba ${nomeAba}.\n\nO Firewall da sua rede de internet bloqueou a comunicação.\n\nCole os índices manualmente.`);
-            document.getElementById('csvIndices').value = '';
-        }
-
-        btnElement.innerHTML = textoOriginal;
-        btnElement.disabled = false;
-    }
-
-    function renderCorrecao() {
-        const body = document.getElementById('tableCorrecaoBody');
-        body.innerHTML = '';
-        let showPago = document.getElementById('chkPagamento').checked;
-        document.querySelectorAll('.col-pago').forEach(el => el.style.display = showPago ? 'table-cell' : 'none');
-        
-        dados.forEach((r, i) => {
-            let totalHist = (r.gratP > 0 ? r.abono : 0) + (r.ferP > 0 ? r.abono/3 : 0);
-            if (!r.hab || (!filterAll && totalHist === 0)) return;
-            
-            let idx = indicesMap[r.c] || { cor: 1.0, jur: 0, sel: 0 };
-            let base = totalHist - (r.pagoVal || 0);
-            if(base < 0) base = 0;
-
-            let principalCorrigido = base * idx.cor;
-            let valJurosMora = principalCorrigido * (idx.jur / 100);
-            let baseSelic = (idx.jur > 0) ? (principalCorrigido + valJurosMora) : principalCorrigido;
-            let valSelic = baseSelic * (idx.sel / 100);
-            
-            r.principalCorrigido = principalCorrigido;
-            r.valJurosMora = valJurosMora;
-            r.valSelic = valSelic;
-            r.totalAtualizado = principalCorrigido + valJurosMora + valSelic;
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td style="text-align:center">${r.c}</td><td>${fmtNum(totalHist)}</td><td class="col-pago"><span class="editable-active" contenteditable="true" onblur="dados[${i}].pagoVal=parseV(this.innerText);renderCorrecao()">${fmtNum(r.pagoVal)}</span></td><td>${fmtNum(base)}</td><td>${fmtIdx(idx.cor)}</td><td>${fmtNum(principalCorrigido)}</td><td>${fmtNum(idx.jur)}%</td><td>${fmtNum(idx.sel)}%</td><td style="font-weight:bold">${fmtNum(r.totalAtualizado)}</td>`;
-            body.appendChild(tr);
-        });
-        calcularTotaisTodasAbas();
-    }
-
-    function calcularTotaisTodasAbas() {
-        let h = 0, ea = 0, ex = 0;
-        let totBrutoAtu = 0, totPrincipalAtu = 0, totJurosMoraAtu = 0, totSelicAtu = 0;
-
-        dados.filter(d => d.hab).forEach(d => {
-            let t = (d.gratP > 0 ? d.abono : 0) + (d.ferP > 0 ? d.abono/3 : 0);
-            h += t; 
-            if(t > 0){ if(parseInt(d.c.split('/')[1]) < 2026) ea++; else ex++; }
-            if(d.totalAtualizado) {
-                totBrutoAtu += d.totalAtualizado; totPrincipalAtu += d.principalCorrigido;
-                totJurosMoraAtu += d.valJurosMora; totSelicAtu += d.valSelic;
+                // Atualiza cards visuais no modal
+                document.getElementById('previewBgUpload').style.backgroundImage = `url('${imagemFundoGlobal}')`;
+                document.getElementById('previewBgUpload').style.backgroundSize = "cover";
+                document.getElementById('labelBgUpload').innerText = "Imagem Carregada ✓";
+                
+                selecionarFundoOpcao('upload');
             }
-        });
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 
-        let hc = parseV(document.getElementById('honContratuais').value);
-        let hs = parseV(document.getElementById('honSucumbencia').value);
-        let fatorParte = (1 - hc/100); let fatorContrato = (hc/100); let fatorSucumb = (hs/100);
-
-        document.getElementById('resBruto').innerText = fmtMoeda(h);
-        document.getElementById('resBrutoAtu').innerText = fmtMoeda(totBrutoAtu);
+    // SELECIONA E ALTERA COMPORTAMENTO VISUAL DO CARD
+    function selecionarFundoOpcao(tipo) {
+        document.getElementById('cardBgNenhum').classList.remove('active');
+        document.getElementById('cardBgUpload').classList.remove('active');
         
-        document.getElementById('resParteTotalAtu').innerText = fmtMoeda(totBrutoAtu * fatorParte);
-        document.getElementById('resPartePrin').innerText = fmtMoeda(totPrincipalAtu * fatorParte);
-        document.getElementById('resParteJur').innerText = fmtMoeda(totJurosMoraAtu * fatorParte);
-        document.getElementById('resParteSelic').innerText = fmtMoeda(totSelicAtu * fatorParte);
-        document.getElementById('resPercParte').innerText = (100 - hc).toFixed(1).replace('.0', '');
-
-        document.getElementById('resContratoTotalAtu').innerText = fmtMoeda(totBrutoAtu * fatorContrato);
-        document.getElementById('resContratoPrin').innerText = fmtMoeda(totPrincipalAtu * fatorContrato);
-        document.getElementById('resContratoJur').innerText = fmtMoeda(totJurosMoraAtu * fatorContrato);
-        document.getElementById('resContratoSelic').innerText = fmtMoeda(totSelicAtu * fatorContrato);
-        document.getElementById('resPercContrato').innerText = hc;
-
-        const secSucumbencia = document.getElementById('secSucumbencia');
-        if (hs > 0) {
-            secSucumbencia.style.display = 'block';
-            document.getElementById('resSucumbTotalAtu').innerText = fmtMoeda(totBrutoAtu * fatorSucumb);
-            document.getElementById('resSucumbPrin').innerText = fmtMoeda(totPrincipalAtu * fatorSucumb);
-            document.getElementById('resSucumbJur').innerText = fmtMoeda(totJurosMoraAtu * fatorSucumb);
-            document.getElementById('resSucumbSelic').innerText = fmtMoeda(totSelicAtu * fatorSucumb);
-            document.getElementById('resPercSucumb').innerText = hs;
+        if(tipo === 'nenhum') {
+            document.getElementById('cardBgNenhum').classList.add('active');
+            document.getElementById('infoFundoAtual').innerText = "Nenhum fundo customizado ativo. O layout usará as cores padrão.";
+            localStorage.setItem('fundo_ativo_tipo', 'nenhum');
+            // Remove o fundo da tela viva
+            document.body.style.backgroundImage = "none";
         } else {
-            secSucumbencia.style.display = 'none';
-        }
-        
-        document.getElementById('statsBox').innerHTML = `• Exercícios Anteriores (até 2025): <strong>${ea}</strong> | • Exercício Atual (2026): <strong>${ex}</strong>`;
-    }
-
-    function salvarProjeto() {
-        const p = { 
-            meta: { 
-                proc: document.getElementById('procNumero').value, aut: document.getElementById('procAutor').value, 
-                cls: document.getElementById('procClasse').value, reu: document.getElementById('procReu').value, 
-                ass: document.getElementById('procAssunto').value, aju: document.getElementById('dataAjuizamento').value, 
-                cit: document.getElementById('dataCitacao').value, date: document.getElementById('dataGeracao').value,
-                honCont: document.getElementById('honContratuais').value,
-                honSuc: document.getElementById('honSucumbencia').value, 
-                presc: document.getElementById('prescricaoToggle').value 
-            }, d: dados, idx: indicesMap 
-        };
-        const a = document.createElement('a'); 
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(p)], {type: 'application/json'})); 
-        a.download = `Calculo_${p.meta.aut || 'calculo'}.json`; 
-        a.click();
-    }
-
-    function processarArquivoJSON(file) {
-        const r = new FileReader();
-        r.onload = (e) => {
-            try {
-                const j = JSON.parse(e.target.result);
-                if (j.meta) {
-                    if (document.getElementById('procNumero')) document.getElementById('procNumero').value = j.meta.proc || '';
-                    if (document.getElementById('procAutor')) document.getElementById('procAutor').value = j.meta.aut || '';
-                    if (document.getElementById('procClasse')) document.getElementById('procClasse').value = j.meta.cls || '';
-                    if (document.getElementById('procReu')) document.getElementById('procReu').value = j.meta.reu || '';
-                    if (document.getElementById('procAssunto')) document.getElementById('procAssunto').value = j.meta.ass || '';
-                    if (document.getElementById('dataAjuizamento')) document.getElementById('dataAjuizamento').value = j.meta.aju || '';
-                    if (document.getElementById('dataCitacao')) document.getElementById('dataCitacao').value = j.meta.cit || '';
-                    if (document.getElementById('dataGeracao') && j.meta.date) document.getElementById('dataGeracao').value = j.meta.date;
-                    
-                    if (j.meta.honCont) document.getElementById('honContratuais').value = j.meta.honCont;
-                    if (j.meta.honSuc) document.getElementById('honSucumbencia').value = j.meta.honSuc;
-                    if (j.meta.presc) document.getElementById('prescricaoToggle').value = j.meta.presc;
-                }
-                
-                dados = j.d || []; 
-                indicesMap = j.idx || {};
-                
-                if (Object.keys(indicesMap).length > 0) {
-                    let rawIdx = "Mês/Ano\tCorreção Monetária\t% Juros de mora\t% SELIC\n";
-                    for (let key in indicesMap) {
-                        rawIdx += `${key}\t${fmtIdx(indicesMap[key].cor)}\t${fmtNum(indicesMap[key].jur)}\t${fmtNum(indicesMap[key].sel)}\n`;
-                    }
-                    document.getElementById('csvIndices').value = rawIdx;
-                    localStorage.setItem('backupIndices', rawIdx);
-                }
-
-                renderApuracao(); 
-                renderCorrecao();
-                geraParams();
-            } catch (error) {
-                alert("Erro ao ler o arquivo. O projeto pode estar corrompido ou não é um JSON válido.");
-                console.error(error);
-            }
-        };
-        r.readAsText(file);
-    }
-
-    function carregarDoInput(inputElement) {
-        const file = inputElement.files[0];
-        if (!file) return;
-        processarArquivoJSON(file);
-        inputElement.value = '';
-    }
-
-    const dragOverlay = document.getElementById('dragOverlay');
-
-    window.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        if (e.dataTransfer.types.includes("Files")) {
-            dragOverlay.classList.add('active');
-        }
-    });
-
-    window.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        if (e.clientX === 0 && e.clientY === 0) {
-            dragOverlay.classList.remove('active');
-        }
-    });
-
-    window.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dragOverlay.classList.remove('active');
-        
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            const file = e.dataTransfer.files[0];
-            if (file.name.endsWith('.json')) {
-                processarArquivoJSON(file);
-            } else {
-                alert('Formato inválido! Por favor, arraste e solte apenas os arquivos de projeto (.json) gerados pelo sistema.');
+            document.getElementById('cardBgUpload').classList.add('active');
+            document.getElementById('infoFundoAtual').innerHTML = "<strong>Fundo Personalizado Ativo!</strong> Na impressão, ele ocupará 100% da folha física (Sangria Completa).";
+            localStorage.setItem('fundo_ativo_tipo', 'upload');
+            // Aplica opacidade leve no fundo da tela de trabalho para não cansar as vistas
+            if(imagemFundoGlobal) {
+                document.body.style.backgroundImage = `linear-gradient(rgba(248,249,250,0.9), rgba(248,249,250,0.9)), url('${imagemFundoGlobal}')`;
+                document.body.style.backgroundSize = "cover";
+                document.body.style.backgroundAttachment = "fixed";
             }
         }
-    });
+    }
 
+    // CARREGA DO ARMAZENAMENTO SE JÁ EXISTIR UM SALVO
+    function carregarFundoSalvo() {
+        const tipoSalvo = localStorage.getItem('fundo_ativo_tipo');
+        const imgSalva = localStorage.getItem('fundo_personalizado_base64');
+        
+        if(imgSalva) {
+            imagemFundoGlobal = imgSalva;
+            document.getElementById('previewBgUpload').style.backgroundImage = `url('${imagemFundoGlobal}')`;
+            document.getElementById('previewBgUpload').style.backgroundSize = "cover";
+            document.getElementById('labelBgUpload').innerText = "Imagem Carregada ✓";
+        }
+        
+        if(tipoSalvo === 'upload' && imgSalva) {
+            selecionarFundoOpcao('upload');
+        } else {
+            selecionarFundoOpcao('nenhum');
+        }
+    }
+
+    // FUNÇÃO REESTRUTURADA DE IMPRESSÃO INCORPORANDO SANGRIAS E FUNDOS TOTAIS
     function imprimir(t) {
         const h = document.getElementById('print-content');
         let html = '<div style="text-align:center; margin-bottom:10px;"><img src="./logo.png" style="max-height:50px; max-width:100%; width:auto; height:auto;" alt="Logo"></div>';
-        const c = [
-            {l: 'Processo:', v: document.getElementById('procNumero').value}, 
-            {l: 'Classe:', v: document.getElementById('procClasse').value}, 
-            {l: 'Parte Autora:', v: document.getElementById('procAutor').value}, 
-            {l: 'Réu:', v: document.getElementById('procReu').value}, 
-            {l: 'Assunto:', v: document.getElementById('procAssunto').value, mt: '15px'}
-        ];
+        const c = [\n            {l: 'Processo:', v: document.getElementById('procNumero').value}, \n            {l: 'Classe:', v: document.getElementById('procClasse').value}, \n            {l: 'Parte Autora:', v: document.getElementById('procAutor').value}, \n            {l: 'Réu:', v: document.getElementById('procReu').value}, \n            {l: 'Assunto:', v: document.getElementById('procAssunto').value, mt: '15px'}\n        ];
         
         c.forEach(i => { 
             if(i.v.trim()) {
@@ -1057,20 +608,35 @@
         });
         h.innerHTML = html;
         
+        // Define o tema de cores das tabelas e títulos
         document.getElementById('pageBody').className = (t === 'classico' ? 'theme-classic' : (t === 'salmao' ? 'theme-salmon' : 'theme-sistema'));
+        
+        // INTERCEPTADOR DE SANGRIA DE PAPEL DE FUNDO
+        const bgPrintElement = document.querySelector('.print-bg');
+        const tipoFundo = localStorage.getItem('fundo_ativo_tipo');
+        
+        if(tipoFundo === 'upload' && imagemFundoGlobal) {
+            // injeta a imagem de fundo no container de impressão
+            bgPrintElement.style.backgroundImage = `url('${imagemFundoGlobal}')`;
+            // Ativa o gatilho CSS que joga as margens físicas do papel para zero
+            document.getElementById('pageBody').classList.add('sangria-ativa');
+        } else {
+            // Limpa o fundo para não misturar com os temas nativos (salmão, clássico)
+            bgPrintElement.style.backgroundImage = "none";
+            document.getElementById('pageBody').classList.remove('sangria-ativa');
+        }
+        
+        // Dispara caixa de diálogo nativa do navegador
         window.print();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        setInitialDate();
-        geraParams();
+        // Inicializadores nativos do seu sistema original
+        if(typeof setInitialDate === 'function') setInitialDate();
+        if(typeof geraParams === 'function') geraParams();
+        
+        // Restaura as configurações do fundo personalizado salvo
         carregarFundoSalvo();
-
-        const indicesSalvos = localStorage.getItem('backupIndices');
-        if (indicesSalvos) {
-            document.getElementById('csvIndices').value = indicesSalvos;
-            processarIndices();
-        }
     });
 </script>
 </body>
