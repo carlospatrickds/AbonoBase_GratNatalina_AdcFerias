@@ -427,11 +427,9 @@
                     <span id="resBrutoAtu">R$ 0,00</span>
                 </div>
             </div>
-            </div>
         </section>
-    
+    </div>
 
-    <!-- PÁGINA 3: RESUMO DISCRIMINADO E PARÂMETROS -->
     <div class="page-break" style="margin-top: 30px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 0;">
             <h2 style="margin: 0; border-bottom: none; padding-bottom: 0;">Resumo Final Discriminado</h2>
@@ -471,10 +469,7 @@
             <h2>Parâmetros Utilizados no Cálculo</h2>
             <textarea id="txtParametros" rows="6"></textarea>
         </section>
-    </div>
-    </div>
-
-        <div class="disclaimer-footer no-print">
+    </div> <div class="disclaimer-footer no-print">
         <strong>Aviso:</strong> As informações inseridas no sistema são de inteira responsabilidade do usuário, devendo este ser responsabilizado por informações falsas ou imprecisas. O sistema tem o intuito de facilitar os cálculos realizados pelos seus desenvolvedores.
     </div>
 
@@ -568,7 +563,7 @@
         
         <div class="modal-body">
             <h4>1. Aplicação da EC nº 113/2021</h4>
-            <p>A atualização do débito e a incidência de juros observarão os seguintes critérios, em combinação com os termos iniciais, índices e percentuais previstos no Manual de Orientação de Procedimentos para os cálculos na Justiça Federal:</p>
+            <p>A atualização do débito e a incidência de juros observarão os seguintes critérios, em combination com os termos iniciais, índices e percentuais previstos no Manual de Orientação de Procedimentos para os cálculos na Justiça Federal:</p>
             <ul>
                 <li><strong>Até 08/12/2021:</strong> Os créditos serão corrigidos com observância do Índice de Preços ao Consumidor Amplo Especial (IPCA-E) e incidirão juros de mora equivalentes aos índices aplicáveis à caderneta de poupança, desde a citação (Tema nº 905 do STJ).</li>
                 <li><strong>A partir de 09/12/2021:</strong> Os créditos serão atualizados exclusivamente pelo índice da taxa referencial do Sistema Especial de Liquidação e de Custódia (SELIC), acumulado mensalmente.</li>
@@ -621,13 +616,15 @@
         input.value = v;
     }
 
+    // CORREÇÃO: Máscara rigorosa para CNJ
     function mascaraCNJ(input) {
         let v = input.value.replace(/\D/g, "");
-        if (v.length > 7)  v = v.replace(/^(\d{7})(\d)/, "$1-$2");
-        if (v.length > 10) v = v.replace(/-(\d{2})(\d)/, "-$1.$2");
-        if (v.length > 15) v = v.replace(/\.(\d{4})(\d)/, ".$1.$2");
-        if (v.length > 17) v = v.replace(/\.(\d{1})(\d)/, ".$1.$2");
-        if (v.length > 20) v = v.replace(/\.(\d{2})(\d)/, ".$1.$2");
+        v = v.replace(/^(\d{7})(\d)/, "$1-$2");
+        v = v.replace(/-(\d{2})(\d)/, "-$1.$2");
+        v = v.replace(/\.(\d{4})(\d)/, ".$1.$2");
+        v = v.replace(/\.(\d{4})\.(\d{1})(\d)/, ".$1.$2.$3");
+        v = v.replace(/\.(\d{1})\.(\d{2})(\d)/, ".$1.$2.$3");
+        if (v.length > 25) v = v.substring(0, 25);
         input.value = v;
     }
 
@@ -648,10 +645,15 @@
         return s;
     }
 
+    // CORREÇÃO: Estabilização do Date Format independentemente do TimeZone
     function setInitialDate() {
         const dGen = document.getElementById('dataGeracao');
         if (dGen && !dGen.value) {
-            dGen.value = new Date().toLocaleDateString('pt-BR');
+            let hoje = new Date();
+            let dia = String(hoje.getDate()).padStart(2, '0');
+            let mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            let ano = hoje.getFullYear();
+            dGen.value = `${dia}/${mes}/${ano}`;
         }
     }
 
@@ -806,9 +808,8 @@
 
         if (dados.length === 0) return;
 
+        // CORREÇÃO: Removido o alert e o bloqueio. Agora ele simplesmente retorna se não houver data.
         if (pre === 'sim' && !ajuInput) {
-            alert('Para aplicar o corte da prescrição quinquenal, por favor preencha a "Data de Ajuizamento" primeiro.');
-            document.getElementById('prescricaoToggle').value = 'nao';
             return;
         }
 
@@ -850,7 +851,8 @@
             let col = linhas[i].split('\t');
             if (col.length <= Math.max(iD, iV, iC)) continue; 
             
-            let d = col[iD].toUpperCase(), v = parseV(col[iV]), c = col[iC].trim();
+            // CORREÇÃO: Utilizando a função de parsing aqui para padronizar abr/2025 para 04/2025
+            let d = col[iD].toUpperCase(), v = parseV(col[iV]), c = parseMesAnoIndex(col[iC].trim());
             if (!c) continue; 
 
             if (!agrupar[c]) agrupar[c] = { abono: 0, grat: 0, fer: 0, pagoVal: 0 };
@@ -1084,7 +1086,11 @@ function calcularTotaisTodasAbas() {
         };
         const a = document.createElement('a'); 
         a.href = URL.createObjectURL(new Blob([JSON.stringify(p)], {type: 'application/json'})); 
-        a.download = `Calculo_${p.meta.aut || 'calculo'}.json`; 
+        
+        // CORREÇÃO: Padrão no salvamento do arquivo usando o nome da parte
+        let nomeParte = p.meta.aut ? p.meta.aut.trim().replace(/\s+/g, '_').toUpperCase() : '';
+        a.download = nomeParte ? `CALC_INC_ABONO_${nomeParte}.json` : `CALC_INC_ABONO.json`;
+        
         a.click();
     }
 
@@ -1168,7 +1174,7 @@ function calcularTotaisTodasAbas() {
         }
     });
 
-    // ATUALIZADO: Lê as margens customizadas e aplica no @media print
+    // CORREÇÃO: Forçando visibilidade do rodapé
     function imprimir() {
         const h = document.getElementById('print-content');
         let html = '';
@@ -1188,7 +1194,6 @@ function calcularTotaisTodasAbas() {
         });
         h.innerHTML = html;
         
-        // Pega as escolhas do rodapé e garante a aplicação forçada na linha HTML!
         const rodapeTexto = document.getElementById('rodapeImpressao');
         let corRodape = localStorage.getItem('fundo_rodape_cor') || 'preto';
         
@@ -1197,8 +1202,9 @@ function calcularTotaisTodasAbas() {
         } else {
             rodapeTexto.style.setProperty('color', '#000000', 'important');
         }
+        
+        rodapeTexto.style.setProperty('z-index', '9999', 'important');
 
-        // Regras de injeção apenas para formatação do papel e margens
         let styleGeral = document.getElementById('stylePrintOverride');
         if (!styleGeral) {
             styleGeral = document.createElement('style');
@@ -1206,10 +1212,10 @@ function calcularTotaisTodasAbas() {
             document.head.appendChild(styleGeral);
         }
 
-        // Lê os valores salvos das margens para aplicar dinamicamente
         let mTopo = localStorage.getItem('sangria_margem_topo') || '3.5';
         let mFundo = localStorage.getItem('sangria_margem_fundo') || '1.0';
 
+        // O padding do fundo recebe mFundo + espaço de segurança extra pro rodapé não ser cortado
         if (imagemFundoGlobal) {
             styleGeral.innerHTML = `
                 @media print { 
@@ -1218,11 +1224,12 @@ function calcularTotaisTodasAbas() {
                     .container { 
                         width: 100% !important; 
                         max-width: 100% !important;
-                        padding: ${mTopo}cm 1cm ${mFundo}cm 1cm !important; 
+                        padding: ${mTopo}cm 1cm calc(${mFundo}cm + 1.5cm) 1cm !important; 
                         box-sizing: border-box !important;
                         margin: 0 !important;
                     } 
                     #tab2 { padding-top: ${mTopo}cm !important; }
+                    .print-footer { bottom: ${mFundo}cm !important; display: block !important; }
                 }
             `;
         } else {
@@ -1237,7 +1244,6 @@ function calcularTotaisTodasAbas() {
         setInitialDate();
         geraParams();
         
-        // Aplica e renderiza configurações previamente salvas
         const t = localStorage.getItem('tema_ativo_tipo') || 'sistema';
         document.getElementById('pageBody').className = 
             (t === 'classico' ? 'theme-classic' : (t === 'salmao' ? 'theme-salmon' : 'theme-sistema'));
@@ -1245,7 +1251,7 @@ function calcularTotaisTodasAbas() {
         const bgSalvo = localStorage.getItem('backup_fundo_pdf_sangria');
         if (bgSalvo) {
             imagemFundoGlobal = bgSalvo;
-            renderizarFundoNaTela(); // Fundo já sobe aplicado na tela
+            renderizarFundoNaTela();
         }
 
         const indicesSalvos = localStorage.getItem('backupIndices');
