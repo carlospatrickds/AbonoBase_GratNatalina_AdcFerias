@@ -33,20 +33,20 @@
         body.theme-sistema th { color: #fff; }
 
         body.theme-classic {
-            --primary: #7f8c8d;
-            --th-bg: #bdc3c7;
+            --primary: #585a5a;
+            --th-bg: #f5f5f5;
             --divider-color: #7f8c8d;
-            --info: #7f8c8d;
+            --info: #585a5a;
             --header-bg: #d0d3d4;
         }
         body.theme-classic th { color: #000; border-color: #7f8c8d; }
         body.theme-classic .header-row { color: #000 !important; border-color: #7f8c8d !important; }
 
         body.theme-salmon {
-            --primary: #BE5014;
+            --primary: #4d2916;
             --th-bg: #FFC599;
             --divider-color: #BE5014;
-            --info: #BE5014;
+            --info: #692a08;
             --header-bg: #ffecd9;
         }
         body.theme-salmon th { color: #000; border-color: #dca377; }
@@ -92,10 +92,12 @@
         }
 
         /* FUNDO DE IMPRESSÃO / TELA (SANGRIA) */
+        .print-only { display: none !important; }
+
         .print-bg {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-size: cover; background-repeat: no-repeat; background-position: center;
-            z-index: 0; -webkit-print-color-adjust: exact; color-adjust: exact;
+            z-index: 0; pointer-events: none; -webkit-print-color-adjust: exact; color-adjust: exact;
         }
 
         .container {
@@ -104,7 +106,7 @@
             background: var(--container-bg);
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15); /* Sombra mais forte para destacar sobre o fundo */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
             position: relative;
             z-index: 1;
         }
@@ -225,23 +227,22 @@
             .no-print, .top-actions, .tabs, .modal-overlay, .drag-overlay { display: none !important; }
             body { padding: 0; background: white; font-size: 11pt; color: #000; margin: 0; } 
             
-            /* Margens reduzidas pela metade (de 15mm para 8mm) */
             @page { margin: 8mm; }
             .container { box-shadow: none; border: none; width: 100%; padding: 0; margin-bottom: 30px; background: transparent;}
             
             #pdf-header-print { display: block; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
             .tab-content { display: block !important; opacity: 1 !important; }
+            .print-only { display: block !important; }
             .page-break { page-break-before: always; padding-top: 20px; }
+            .page-break section { page-break-inside: avoid; }
             table { font-size: 9pt; } 
 
-            /* A fonte do rodapé não será mais controlada por CSS injetado, 
-               mas diretamente pelo JS no atributo style do elemento para evitar que suma. */
             .print-footer {
-                display: block !important; position: fixed; bottom: 0; left: 0; width: 100%; text-align: center;
+                display: block !important; position: fixed; bottom: 5mm; left: 0; width: 100%; text-align: center;
                 font-size: 9pt; background-color: transparent; padding-top: 5px; border-top: 1px solid #ccc;
+                z-index: 9999;
             }
 
-            /* Na impressão, o fundo preenche 100% (cobrindo a folha A4 exata) */
             .print-bg { background-size: 100% 100% !important; }
 
             /* REGRAS ESPECÍFICAS DE IMPRESSÃO POR TEMA */
@@ -261,6 +262,7 @@
             .sum-row { border-bottom-color: #ccc; }
             .total-geral { color: #000 !important; }
             .sum-row.sub { color: #444 !important; }
+            hr.divider { -webkit-print-color-adjust: exact; color-adjust: exact; border-top: 3px solid #174A67 !important; }
         }
     </style>
 </head>
@@ -275,7 +277,7 @@
 <div class="container">
     <div class="top-actions no-print">
         <a href="https://pss-progressivo.streamlit.app/" target="_blank" class="btn btn-link">🧮 Cálculo PSS</a>
-        <a href="https://buscador-rubricas-fichanovadeepseek.streamlit.app/" target="_blank" class="btn btn-link">📋 Extração Fichas</a>
+        <a href="https://carlospatrickds.github.io/extrator_siape//" target="_blank" class="btn btn-link">📋 Extração Fichas</a>
         <a href="https://carlospatrickds.github.io/juntapdf/" target="_blank" class="btn btn-link">📂 Junta PDF</a>
         <div style="width: 15px;"></div>
         
@@ -419,50 +421,55 @@
                 </table>
             </div>
             
-            <div class="summary-card" id="resumoFinalContainer">
-                <h3 style="margin-bottom: 5px;">Resumo Final Discriminado</h3>
-                <div class="sum-row total-geral">
+                        <div class="summary-card" style="padding: 15px 25px;">
+                <div class="sum-row total-geral" style="padding: 0; border: none;">
                     <span>TOTAL DA CONDENAÇÃO (Principal + Juros + SELIC)</span> 
                     <span id="resBrutoAtu">R$ 0,00</span>
                 </div>
-                
-                <div class="sum-row header-row">
-                    <span>1. Valor Devido à Parte Autora (<span id="resPercParte">80</span>%)</span> 
-                    <span id="resParteTotalAtu">R$ 0,00</span>
-                </div>
-                <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resPartePrin">R$ 0,00</span></div>
-                <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resParteJur">R$ 0,00</span></div>
-                <div class="sum-row sub"><span>└ SELIC</span> <span id="resParteSelic">R$ 0,00</span></div>
-
-                <div class="sum-row header-row">
-                    <span>2. Honorários Contratuais (Retenção - <span id="resPercContrato">20</span>%)</span> 
-                    <span id="resContratoTotalAtu">R$ 0,00</span>
-                </div>
-                <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resContratoPrin">R$ 0,00</span></div>
-                <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resContratoJur">R$ 0,00</span></div>
-                <div class="sum-row sub"><span>└ SELIC</span> <span id="resContratoSelic">R$ 0,00</span></div>
-
-                <div id="secSucumbencia">
-                    <div class="sum-row header-row" style="margin-top: 25px;">
-                        <span>3. Honorários de Sucumbência (<span id="resPercSucumb">0</span>% sobre a condenação)</span> 
-                        <span id="resSucumbTotalAtu">R$ 0,00</span>
-                    </div>
-                    <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resSucumbPrin">R$ 0,00</span></div>
-                    <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resSucumbJur">R$ 0,00</span></div>
-                    <div class="sum-row sub"><span>└ SELIC</span> <span id="resSucumbSelic">R$ 0,00</span></div>
-                </div>
-
-                <div id="statsBox" style="font-size: 0.85em; color: var(--text-muted); margin-top: 25px; padding-top:10px; border-top: 1px dashed #ccc;"></div>
             </div>
         </section>
     </div>
 
-    <section style="margin-top: 25px;">
-        <h2>Parâmetros Utilizados no Cálculo</h2>
-        <textarea id="txtParametros" rows="6"></textarea>
-    </section>
+    <div class="page-break" style="margin-top: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 0;">
+            <h2 style="margin: 0; border-bottom: none; padding-bottom: 0;">Resumo Final Discriminado</h2>
+        </div>
+        <hr style="border: none; border-bottom: 1px solid var(--border); margin: 10px 0 25px 0;">
+        <div class="summary-card" id="resumoFinalContainer">
+            <div class="sum-row header-row">
+                <span>1. Valor Devido à Parte Autora (<span id="resPercParte">80</span>%)</span> 
+                <span id="resParteTotalAtu">R$ 0,00</span>
+            </div>
+            <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resPartePrin">R$ 0,00</span></div>
+            <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resParteJur">R$ 0,00</span></div>
+            <div class="sum-row sub"><span>└ SELIC</span> <span id="resParteSelic">R$ 0,00</span></div>
 
-    <div class="disclaimer-footer no-print">
+            <div class="sum-row header-row">
+                <span>2. Honorários Contratuais (Retenção - <span id="resPercContrato">20</span>%)</span> 
+                <span id="resContratoTotalAtu">R$ 0,00</span>
+            </div>
+            <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resContratoPrin">R$ 0,00</span></div>
+            <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resContratoJur">R$ 0,00</span></div>
+            <div class="sum-row sub"><span>└ SELIC</span> <span id="resContratoSelic">R$ 0,00</span></div>
+
+            <div id="secSucumbencia">
+                <div class="sum-row header-row" style="margin-top: 25px;">
+                    <span>3. Honorários de Sucumbência (<span id="resPercSucumb">0</span>% sobre a condenação)</span> 
+                    <span id="resSucumbTotalAtu">R$ 0,00</span>
+                </div>
+                <div class="sum-row sub"><span>├ Principal Corrigido</span> <span id="resSucumbPrin">R$ 0,00</span></div>
+                <div class="sum-row sub"><span>├ Juros de Mora</span> <span id="resSucumbJur">R$ 0,00</span></div>
+                <div class="sum-row sub"><span>└ SELIC</span> <span id="resSucumbSelic">R$ 0,00</span></div>
+            </div>
+
+            <div id="statsBox" style="font-size: 0.85em; color: var(--text-muted); margin-top: 25px; padding-top:10px; border-top: 1px dashed #ccc;"></div>
+        </div>
+
+        <section style="margin-top: 25px;">
+            <h2>Parâmetros Utilizados no Cálculo</h2>
+            <textarea id="txtParametros" rows="6"></textarea>
+        </section>
+    </div> <div class="disclaimer-footer no-print">
         <strong>Aviso:</strong> As informações inseridas no sistema são de inteira responsabilidade do usuário, devendo este ser responsabilizado por informações falsas ou imprecisas. O sistema tem o intuito de facilitar os cálculos realizados pelos seus desenvolvedores.
     </div>
 
@@ -517,6 +524,21 @@
         </div>
 
         <div class="bg-upload-area" style="margin-top: 20px; padding-top: 15px;">
+            <h4 style="margin-top:0; margin-bottom: 10px; color: var(--primary);">Ajuste de Margens (Sangria)</h4>
+            <div style="display: flex; gap: 15px;">
+                <div class="form-group" style="width: 50%;">
+                    <label>Margem Superior (cm)</label>
+                    <input type="number" id="margemTopo" step="0.5" value="3.5" min="0" max="15">
+                </div>
+                <div class="form-group" style="width: 50%;">
+                    <label>Margem Inferior (cm)</label>
+                    <input type="number" id="margemFundo" step="0.5" value="1.0" min="0" max="15">
+                </div>
+            </div>
+            <p style="font-size: 0.8em; color: var(--text-muted); margin-top: 5px;">Ajuste os valores para não sobrepor o cabeçalho e rodapé da sua imagem.</p>
+        </div>
+
+        <div class="bg-upload-area" style="margin-top: 20px; padding-top: 15px;">
             <h4 style="margin-top:0; margin-bottom: 10px; color: var(--primary);">Cor do Texto do Rodapé</h4>
             <div style="display: flex; gap: 15px;">
                 <label style="cursor:pointer; display:flex; align-items:center; gap:5px; font-size: 0.9em; color: var(--text-main);">
@@ -541,7 +563,7 @@
         
         <div class="modal-body">
             <h4>1. Aplicação da EC nº 113/2021</h4>
-            <p>A atualização do débito e a incidência de juros observarão os seguintes critérios, em combinação com os termos iniciais, índices e percentuais previstos no Manual de Orientação de Procedimentos para os cálculos na Justiça Federal:</p>
+            <p>A atualização do débito e a incidência de juros observarão os seguintes critérios, em combination com os termos iniciais, índices e percentuais previstos no Manual de Orientação de Procedimentos para os cálculos na Justiça Federal:</p>
             <ul>
                 <li><strong>Até 08/12/2021:</strong> Os créditos serão corrigidos com observância do Índice de Preços ao Consumidor Amplo Especial (IPCA-E) e incidirão juros de mora equivalentes aos índices aplicáveis à caderneta de poupança, desde a citação (Tema nº 905 do STJ).</li>
                 <li><strong>A partir de 09/12/2021:</strong> Os créditos serão atualizados exclusivamente pelo índice da taxa referencial do Sistema Especial de Liquidação e de Custódia (SELIC), acumulado mensalmente.</li>
@@ -576,7 +598,7 @@
     let editMode = false, filterAll = false;
     
     let imagemFundoGlobal = null; 
-    let temaTemporarioModal = 'sistema'; // Guarda a seleção antes de aplicar
+    let temaTemporarioModal = 'sistema';
 
     const fmtNum = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmtIdx = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
@@ -596,11 +618,12 @@
 
     function mascaraCNJ(input) {
         let v = input.value.replace(/\D/g, "");
-        if (v.length > 7)  v = v.replace(/^(\d{7})(\d)/, "$1-$2");
-        if (v.length > 10) v = v.replace(/-(\d{2})(\d)/, "-$1.$2");
-        if (v.length > 15) v = v.replace(/\.(\d{4})(\d)/, ".$1.$2");
-        if (v.length > 17) v = v.replace(/\.(\d{1})(\d)/, ".$1.$2");
-        if (v.length > 20) v = v.replace(/\.(\d{2})(\d)/, ".$1.$2");
+        v = v.replace(/^(\d{7})(\d)/, "$1-$2");
+        v = v.replace(/-(\d{2})(\d)/, "-$1.$2");
+        v = v.replace(/\.(\d{4})(\d)/, ".$1.$2");
+        v = v.replace(/\.(\d{4})\.(\d{1})(\d)/, ".$1.$2.$3");
+        v = v.replace(/\.(\d{1})\.(\d{2})(\d)/, ".$1.$2.$3");
+        if (v.length > 25) v = v.substring(0, 25);
         input.value = v;
     }
 
@@ -623,8 +646,12 @@
 
     function setInitialDate() {
         const dGen = document.getElementById('dataGeracao');
-        if (dGen && !dGen.value) {
-            dGen.value = new Date().toLocaleDateString('pt-BR');
+        if (dGen) {
+            let hoje = new Date();
+            let dia = String(hoje.getDate()).padStart(2, '0');
+            let mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            let ano = hoje.getFullYear();
+            dGen.value = `${dia}/${mes}/${ano}`;
         }
     }
 
@@ -634,7 +661,6 @@
         btn.classList.add('active');
     }
 
-    /* === FUNÇÕES DO MODAL DE TEMA, SANGRIA E RODAPÉ === */
     function abrirModalTema() {
         document.getElementById('modalTema').classList.add('active');
         atualizarInterfaceModal();
@@ -650,39 +676,39 @@
         if(cardAtivo) cardAtivo.classList.add('active');
     }
 
-    // Lê os dados salvos e exibe corretamente no popup quando ele abre
     function atualizarInterfaceModal() {
-        // Marca o Card do Tema
         temaTemporarioModal = localStorage.getItem('tema_ativo_tipo') || 'sistema';
         marcarCardModal(temaTemporarioModal);
 
-        // Marca a opção do Rodapé
         let corRodapeAtiva = localStorage.getItem('fundo_rodape_cor') || 'preto';
         let radioRodape = document.querySelector(`input[name="corRodape"][value="${corRodapeAtiva}"]`);
         if(radioRodape) radioRodape.checked = true;
+
+        document.getElementById('margemTopo').value = localStorage.getItem('sangria_margem_topo') || '3.5';
+        document.getElementById('margemFundo').value = localStorage.getItem('sangria_margem_fundo') || '1.0';
     }
 
-    // BOTÃO VERDE "APLICAR E FECHAR"
     function aplicarAlteracoesModal() {
-        // 1. Aplica o Tema Visual na Tabela
         localStorage.setItem('tema_ativo_tipo', temaTemporarioModal);
         document.getElementById('pageBody').className = 
             (temaTemporarioModal === 'classico' ? 'theme-classic' : 
             (temaTemporarioModal === 'salmao' ? 'theme-salmon' : 'theme-sistema'));
 
-        // 2. Aplica a Cor do Rodapé
         const corSelecionada = document.querySelector('input[name="corRodape"]:checked');
         if(corSelecionada) {
             localStorage.setItem('fundo_rodape_cor', corSelecionada.value);
         }
 
-        // 3. Renderiza o Fundo (Sangria) IMEDIATAMENTE NA TELA
+        localStorage.setItem('sangria_margem_topo', document.getElementById('margemTopo').value);
+        localStorage.setItem('sangria_margem_fundo', document.getElementById('margemFundo').value);
+
         renderizarFundoNaTela();
+        
+        setInitialDate();
 
         fecharModalTema();
     }
 
-    // Exibe a imagem tanto na tela do App quanto no preview do Modal
     function renderizarFundoNaTela() {
         const bgApp = document.getElementById('printBg');
         if (imagemFundoGlobal) {
@@ -720,7 +746,6 @@
         document.getElementById('inputFundoPdf').value = '';
         document.getElementById('bgPreviewImg').style.backgroundImage = 'none';
     }
-    /* ============================================== */
 
     function abrirModalExplicacao() { document.getElementById('modalExplicacao').classList.add('active'); }
     function fecharModalExplicacao() { document.getElementById('modalExplicacao').classList.remove('active'); }
@@ -775,8 +800,6 @@
         if (dados.length === 0) return;
 
         if (pre === 'sim' && !ajuInput) {
-            alert('Para aplicar o corte da prescrição quinquenal, por favor preencha a "Data de Ajuizamento" primeiro.');
-            document.getElementById('prescricaoToggle').value = 'nao';
             return;
         }
 
@@ -818,7 +841,7 @@
             let col = linhas[i].split('\t');
             if (col.length <= Math.max(iD, iV, iC)) continue; 
             
-            let d = col[iD].toUpperCase(), v = parseV(col[iV]), c = col[iC].trim();
+            let d = col[iD].toUpperCase(), v = parseV(col[iV]), c = parseMesAnoIndex(col[iC].trim());
             if (!c) continue; 
 
             if (!agrupar[c]) agrupar[c] = { abono: 0, grat: 0, fer: 0, pagoVal: 0 };
@@ -957,33 +980,39 @@
         const body = document.getElementById('tableCorrecaoBody');
         body.innerHTML = '';
         let showPago = document.getElementById('chkPagamento').checked;
-        document.querySelectorAll('.col-pago').forEach(el => el.style.display = showPago ? 'table-cell' : 'none');
-        
+
         dados.forEach((r, i) => {
             let totalHist = (r.gratP > 0 ? r.abono : 0) + (r.ferP > 0 ? r.abono/3 : 0);
             if (!r.hab || (!filterAll && totalHist === 0)) return;
-            
+
             let idx = indicesMap[r.c] || { cor: 1.0, jur: 0, sel: 0 };
-            let base = totalHist - (r.pagoVal || 0);
+            let pagoVal = parseFloat(r.pagoVal) || 0;
+            let base = totalHist - pagoVal;
             if(base < 0) base = 0;
 
             let principalCorrigido = base * idx.cor;
             let valJurosMora = principalCorrigido * (idx.jur / 100);
             let baseSelic = (idx.jur > 0) ? (principalCorrigido + valJurosMora) : principalCorrigido;
             let valSelic = baseSelic * (idx.sel / 100);
-            
+
             r.principalCorrigido = principalCorrigido;
             r.valJurosMora = valJurosMora;
             r.valSelic = valSelic;
             r.totalAtualizado = principalCorrigido + valJurosMora + valSelic;
 
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td style="text-align:center">${r.c}</td><td>${fmtNum(totalHist)}</td><td class="col-pago"><span class="editable-active" contenteditable="true" onblur="dados[${i}].pagoVal=parseV(this.innerText);renderCorrecao()">${fmtNum(r.pagoVal)}</span></td><td>${fmtNum(base)}</td><td>${fmtIdx(idx.cor)}</td><td>${fmtNum(principalCorrigido)}</td><td>${fmtNum(idx.jur)}%</td><td>${fmtNum(idx.sel)}%</td><td style="font-weight:bold">${fmtNum(r.totalAtualizado)}</td>`;
+            let pagoDisplay = showPago ? 'table-cell' : 'none';
+            tr.innerHTML = `<td style="text-align:center">${r.c}</td><td>${fmtNum(totalHist)}</td><td class="col-pago" style="display:${pagoDisplay}"><span class="editable-active" contenteditable="true" onblur="dados[${i}].pagoVal=parseV(this.innerText);renderCorrecao()">${fmtNum(pagoVal)}</span></td><td>${fmtNum(base)}</td><td>${fmtIdx(idx.cor)}</td><td>${fmtNum(principalCorrigido)}</td><td>${fmtNum(idx.jur)}%</td><td>${fmtNum(idx.sel)}%</td><td style="font-weight:bold">${fmtNum(r.totalAtualizado)}</td>`;
             body.appendChild(tr);
         });
+
+        document.querySelectorAll('#tblCorrecao thead .col-pago').forEach(el => {
+            el.style.display = showPago ? 'table-cell' : 'none';
+        });
+
         calcularTotaisTodasAbas();
     }
-
+    
     function calcularTotaisTodasAbas() {
         let h = 0, ea = 0, ex = 0;
         let totBrutoAtu = 0, totPrincipalAtu = 0, totJurosMoraAtu = 0, totSelicAtu = 0;
@@ -1032,7 +1061,8 @@
         document.getElementById('statsBox').innerHTML = `• Exercícios Anteriores (até 2025): <strong>${ea}</strong> | • Exercício Atual (2026): <strong>${ex}</strong>`;
     }
 
-    function salvarProjeto() {
+    // CORREÇÃO APLICADA AQUI: Utiliza a File System Access API para perguntar o local de salvamento
+    async function salvarProjeto() {
         const p = { 
             meta: { 
                 proc: document.getElementById('procNumero').value, aut: document.getElementById('procAutor').value, 
@@ -1044,9 +1074,39 @@
                 presc: document.getElementById('prescricaoToggle').value 
             }, d: dados, idx: indicesMap 
         };
+
+        const conteudo = JSON.stringify(p);
+        let nomeParte = p.meta.aut ? p.meta.aut.trim().replace(/\s+/g, '_').toUpperCase() : '';
+        const nomeSugerido = nomeParte ? `CALC_INC_ABONO_${nomeParte}.json` : `CALC_INC_ABONO.json`;
+
+        if (window.showSaveFilePicker) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: nomeSugerido,
+                    types: [{
+                        description: 'Arquivo JSON do Projeto',
+                        accept: {'application/json': ['.json']},
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(conteudo);
+                await writable.close();
+            } catch (err) {
+                // Se o usuário apenas cancelar a janela, ignoramos o erro
+                if (err.name !== 'AbortError') {
+                    console.error('Erro ao salvar com picker, caindo no fallback:', err);
+                    salvarProjetoFallback(conteudo, nomeSugerido);
+                }
+            }
+        } else {
+            salvarProjetoFallback(conteudo, nomeSugerido);
+        }
+    }
+
+    function salvarProjetoFallback(conteudo, nomeArquivo) {
         const a = document.createElement('a'); 
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(p)], {type: 'application/json'})); 
-        a.download = `Calculo_${p.meta.aut || 'calculo'}.json`; 
+        a.href = URL.createObjectURL(new Blob([conteudo], {type: 'application/json'})); 
+        a.download = nomeArquivo;
         a.click();
     }
 
@@ -1061,15 +1121,22 @@
                     if (document.getElementById('procClasse')) document.getElementById('procClasse').value = j.meta.cls || '';
                     if (document.getElementById('procReu')) document.getElementById('procReu').value = j.meta.reu || '';
                     if (document.getElementById('procAssunto')) document.getElementById('procAssunto').value = j.meta.ass || '';
-                    if (document.getElementById('dataAjuizamento')) document.getElementById('dataAjuizamento').value = j.meta.aju || '';
+                    
+                    if (document.getElementById('dataAjuizamento')) {
+                        let ajuVal = j.meta.aju || '';
+                        if (ajuVal.includes('T')) ajuVal = ajuVal.split('T')[0]; 
+                        document.getElementById('dataAjuizamento').value = ajuVal;
+                    }
+
                     if (document.getElementById('dataCitacao')) document.getElementById('dataCitacao').value = j.meta.cit || '';
-                    if (document.getElementById('dataGeracao') && j.meta.date) document.getElementById('dataGeracao').value = j.meta.date;
                     
                     if (j.meta.honCont) document.getElementById('honContratuais').value = j.meta.honCont;
                     if (j.meta.honSuc) document.getElementById('honSucumbencia').value = j.meta.honSuc;
                     if (j.meta.presc) document.getElementById('prescricaoToggle').value = j.meta.presc;
                 }
                 
+                setInitialDate();
+
                 dados = j.d || []; 
                 indicesMap = j.idx || {};
                 
@@ -1130,7 +1197,6 @@
         }
     });
 
-    // ATUALIZADO: Cor do rodapé é injetada direto no style do elemento para NUNCA sumir
     function imprimir() {
         const h = document.getElementById('print-content');
         let html = '';
@@ -1150,7 +1216,6 @@
         });
         h.innerHTML = html;
         
-        // Pega as escolhas do rodapé e garante a aplicação forçada na linha HTML!
         const rodapeTexto = document.getElementById('rodapeImpressao');
         let corRodape = localStorage.getItem('fundo_rodape_cor') || 'preto';
         
@@ -1159,14 +1224,18 @@
         } else {
             rodapeTexto.style.setProperty('color', '#000000', 'important');
         }
+        
+        rodapeTexto.style.setProperty('z-index', '9999', 'important');
 
-        // Regras de injeção apenas para formatação do papel e margens
         let styleGeral = document.getElementById('stylePrintOverride');
         if (!styleGeral) {
             styleGeral = document.createElement('style');
             styleGeral.id = 'stylePrintOverride';
             document.head.appendChild(styleGeral);
         }
+
+        let mTopo = localStorage.getItem('sangria_margem_topo') || '3.5';
+        let mFundo = localStorage.getItem('sangria_margem_fundo') || '1.0';
 
         if (imagemFundoGlobal) {
             styleGeral.innerHTML = `
@@ -1176,11 +1245,12 @@
                     .container { 
                         width: 100% !important; 
                         max-width: 100% !important;
-                        padding: 3.5cm 1cm 1cm 1cm !important; 
+                        padding: ${mTopo}cm 1cm calc(${mFundo}cm + 1.5cm) 1cm !important; 
                         box-sizing: border-box !important;
                         margin: 0 !important;
                     } 
-                    #tab2 { padding-top: 3.5cm !important; }
+                    #tab2 { padding-top: ${mTopo}cm !important; }
+                    .print-footer { bottom: ${mFundo}cm !important; display: block !important; }
                 }
             `;
         } else {
@@ -1190,12 +1260,10 @@
         window.print();
     }
 
-    // Inicialização da Tela
     window.addEventListener('DOMContentLoaded', () => {
         setInitialDate();
         geraParams();
         
-        // Aplica e renderiza configurações previamente salvas
         const t = localStorage.getItem('tema_ativo_tipo') || 'sistema';
         document.getElementById('pageBody').className = 
             (t === 'classico' ? 'theme-classic' : (t === 'salmao' ? 'theme-salmon' : 'theme-sistema'));
@@ -1203,7 +1271,7 @@
         const bgSalvo = localStorage.getItem('backup_fundo_pdf_sangria');
         if (bgSalvo) {
             imagemFundoGlobal = bgSalvo;
-            renderizarFundoNaTela(); // Fundo já sobe aplicado na tela
+            renderizarFundoNaTela();
         }
 
         const indicesSalvos = localStorage.getItem('backupIndices');
